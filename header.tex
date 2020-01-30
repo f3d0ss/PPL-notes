@@ -1,0 +1,74 @@
+\documentclass[10pt,landscape]{article}
+
+\usepackage{listings}
+\usepackage[italian]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+\usepackage[landscape]{geometry}
+\usepackage{enumitem}
+\usepackage[printwatermark]{xwatermark}
+\usepackage[compact]{titlesec}
+\usepackage[flushleft]{threeparttable}
+\usepackage{textcomp}
+\usepackage{todonotes}
+\usepackage{lastpage}
+
+\geometry{top=.5in,left=.5in,right=.5in,bottom=.5in,headsep=0in}
+
+% Turn off header and footer
+\pagestyle{empty}
+
+\definecolor{dkgreen}{rgb}{0,0.6,0}
+\definecolor{gray}{rgb}{0.5,0.5,0.5}
+\definecolor{mauve}{rgb}{0.58,0,0.82}
+
+\lstset{frame=tb,
+  language=Lisp,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+\geometry{top=.5in,left=.5in,right=.5in,bottom=.5in,headsep=0in}
+
+% Turn off header and footer
+\pagestyle{empty}
+
+% Reduce size of \section e \subsection
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{1em}{}
+\titlespacing{\section}{0pt}{0ex}{-0.5ex}
+\titlespacing{\subsection}{0pt}{0ex}{-0.5ex}
+
+
+% Don't print section numbers
+\setcounter{secnumdepth}{0}
+
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt plus 0.5ex}
+
+\setlist[itemize]{noitemsep, nolistsep}
+
+
+\newcommand{\rarr}{\rightarrow}
+
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\pagenumbering{arabic}
+\pagestyle{fancy}
+\fancyhead[R]{Page \thepage{} of \pageref{LastPage}}
+\fancyhead[L]{}
+\fancyfoot[C]{}
+\renewcommand{\headrulewidth}{0pt}

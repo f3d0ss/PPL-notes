@@ -1,0 +1,618 @@
+\section{Scheme}
+
+\subsection{Lambda}
+Lambdas are unnamed procedures
+\begin{lstlisting}
+    (lambda (x y) ; this is a comment
+        (+ (* x x) (* y y)))
+\end{lstlisting}
+Example usage:
+\begin{lstlisting}
+    ((lambda (x y) (+ (* x x) (* y y))) 2 3) ; => 23
+\end{lstlisting}
+
+\subsection{Let}
+Scope is \textbf{static}
+let example:
+\begin{lstlisting}
+    (let ((x 2)
+          (y 3))
+        ;here go the code using x,y
+    )
+\end{lstlisting}
+let binds variables "in parallel":
+\begin{lstlisting}
+    (let ((x 1)
+          (y 2))
+        (let ((x y)
+            (y x))
+            ;y = 1, x = 2 
+        )   
+    )
+\end{lstlisting}
+
+\subsection{Quoting}
+Syntax form to prevent evaluation
+\begin{lstlisting}
+    (quote <expr>)
+    ;equivalent to
+    '<expr>
+\end{lstlisting}
+<expr> is left unevaluated
+\begin{lstlisting}
+    (quote (1 2 3)) ;is a list
+    (quote (+ 1 2)) ;is another list
+\end{lstlisting}
+\textit{quasiquote} (‘) and \textit{unquote} (,) are used for partial evaluation
+\begin{lstlisting}
+    '(1 2 3) ;is a list (1 2 3)
+    `(1 ,(+ 1 1) 2) ;is another list (1 2 3)
+\end{lstlisting}
+
+\subsection{Eval}
+\begin{lstlisting}
+    eval '(+ 1 2 3) ;is 6
+\end{lstlisting}
+
+\subsection{Begin}
+Use \textbf{begin} to write block of procedural code:
+\begin{lstlisting}
+    (begin
+        (op-1 ...)
+        (op-2 ...)
+        ...
+        (op-n ...)
+    )
+\end{lstlisting}
+
+Every op-i is evaluated in order and the value of the block is the value obtained by the last expression
+
+\subsection{Definitions}
+To create top-level bindings there is \textbf{define}:
+\begin{lstlisting}
+    (define <name> <what>)
+    ;example
+    (define x 12)
+    (define y #(1 2 3))
+\end{lstlisting}
+Defining procedures:
+\begin{lstlisting}
+    (define cube (lambda (x) (* x x x)))
+    (cube 3) ; = 27
+\end{lstlisting}
+Short notation to define procedures:
+\begin{lstlisting}
+    (define (cube x) (* x x x))
+    (cube 3) ; = 27
+\end{lstlisting}
+
+\subsection{Assignment}:
+Use \textbf{set!} for assignement:
+\begin{lstlisting}
+    (begin
+        (define x 23)
+        (set! x 42)
+        x
+    )  ; = 42
+\end{lstlisting}
+
+\subsection{List}
+Lists are memorized as concatenated pairs, a pair (written (x . y), also called a cons node) consists of two parts:
+\begin{itemize}
+    \item \textbf{car} (i.e. x) aka Content of the Address Register (take the first element of a list)
+    \item \textbf{cdr} (i.e. y) aka Content of the Data Register (take the list without the first element)
+\end{itemize}
+A list (1 2 3) is stored like this (1 . (2 . (3 . ()))) \
+() is the empty list \
+The two procedures \textbf{car} and \textbf{cdr} are used as accessors \
+\textbf{member} is used to check if a list contains a value:
+\begin{lstlisting}
+    (member 2 '(1 2 3)) ; => '(2 3)
+\end{lstlisting}
+
+Define a procedure with variable number if argument
+\begin{lstlisting}
+    (define (x . y) y)
+    (x 1 2 3)  ; = > '(1 2 3)
+\end{lstlisting}
+\textbf{apply} can be used to apply procedure to list of elements:
+\begin{lstlisting}
+    (apply + '(1 2 3 4)) ; = 10
+\end{lstlisting}
+To build pair we can use \textbf{cons}
+\begin{lstlisting}
+    (cons 1 2) ;    = (1 . 2)
+    (cons 1 '(2)) ; = (1 2)
+\end{lstlisting}
+Example, find minimum of a list:
+\begin{lstlisting}
+    (define (minimum L)
+        (let ((x (car L))
+              (xs (cdr L)))
+            (if (null ? xs) ; is xs = ()?
+                x           ; then return x
+            (minimum        ; else : recursive call
+                (cons
+                    (if (< x (car xs))
+                        x
+                        (car xs))
+                    (cdr xs))))))
+    (minimum '(11 -3 2 3 8 -15 0)) ; = > -15
+\end{lstlisting}
+Variant with variable number of argument:
+\begin{lstlisting}
+    (define (minimum x . rest)
+        (if (null ? rest)   ; is rest = ()?
+            x               ; then return x
+            (apply minimum  ; else : recursive call
+                (cons
+                    (if (< x (car rest))
+                        x
+                        (car xs)
+                    )
+                    (cdr xs)
+                )
+            )
+        )
+    )
+    (minimum 11 -3 2 3 8 -15 0) ; = > -15
+\end{lstlisting}
+
+\subsection{Loop}
+Example:
+\begin{lstlisting}
+    (let label ((x 0))
+        (when (< x 10)
+            (display x)
+            (newline)
+            (label (+ x 1))
+        )
+    )
+\end{lstlisting}
+We can use as many variables as we like, value obtained by the last expression.
+
+\subsection{Tail recursion}
+Example \textbf{not tail recursive}:
+\begin{lstlisting}
+    (define (factorial n)
+        (if (= n 0)
+            1
+            (* n factorial (- n 1))
+        )
+    )
+\end{lstlisting}
+Example \textbf{tail recursive}:
+\begin{lstlisting}
+    (define (fact x)
+        (define (fact-tail x accum)  ;local proc
+            (if (= x 0)
+                accum
+                (fact-tail (- x 1) (* x accum))
+            )
+        )
+        (fact-tail x 1)
+    )
+\end{lstlisting}
+To avoid stack consumption it can be optimize (indeed, the previous tail call is translated in the following low-level code)
+\begin{lstlisting}
+    (define (fact-low-level n)
+        (define x n)
+        (define accum 1)
+        (let loop () ; see this as the "loop" label
+            (if (= x 0)
+                accum
+                (begin
+                    (set! accum (* x accum))
+                    (set! x (- x 1))
+                    (loop)  ; jump to "loop"
+                )
+            )
+        )  
+    )
+\end{lstlisting}
+A more idiomatic way of writing it is the following:
+\begin{lstlisting}
+    (define (fact-low-level n)
+        (let loop ((x n)
+              (accum 1))
+            (if (= x 0)
+                accum
+                (loop (- x 1)(* accum x))
+            )
+        )  
+    )
+\end{lstlisting}
+But note that this looks like a tail call. . .
+(In reality, the named let is translated into a local recursive function. If tail
+recursive, when compiled it becomes a simple jump.)
+
+\subsection{for-each}
+\begin{lstlisting}
+    (for-each (lambda (x)
+                (display x)(newline))
+            '(this is it)
+    )
+\end{lstlisting}
+For vector:
+\begin{lstlisting}
+    (vector-for-each (lambda (x)
+                        (display x)(newline))
+                    #(this is it)
+    )
+\end{lstlisting}
+Here is the definition:
+\begin{lstlisting}
+    (define (vector-for-each body vect)
+        (let ((max (- (vector-leght vect) 1)))
+            (let loop ((i 0))
+                (body (vector-ref vect i)) ; vect[i] in C
+                (when (< i max)
+                    (loop (+ x 1))
+                )
+            )
+        )
+    )
+\end{lstlisting}
+
+\subsection{Equivalence}
+\begin{itemize}
+    \item A predicate is a procedure that returns a Boolean. Its name usually ends with ? (e.g. null?)
+    \item = is used only for numbers
+    \item there are:
+    \begin{itemize}
+        \item \textbf{eq?} tests if two objects are the same (good for symbols) \textit{(eq? ’casa ’casa), but not (eq? "casa" (string-append "ca" "sa")), (eq? 2 2) is unspecified}
+        \item \textbf{eqv?} like eq?, but checks also numbers
+        \item \textbf{equal?} predicate is true iff the (possibly infinite) unfoldings of its arguments into regular trees are equal as ordered trees. \textit{(equal? (make-vector 5 'a)(make-vector 5 'a)) is true}
+    \end{itemize}
+\end{itemize}
+
+\subsection{Case and Cond}
+\begin{itemize}
+    \item case:
+        \begin{lstlisting}
+            (case (car '(c d))
+                ((a e i o u)    'vowel)
+                ((w y)          'semivowel)
+                (else           'constant) 
+            )   ; => constant
+        \end{lstlisting}
+    \item cond:
+        \begin{lstlisting}
+            (cond   ((> 3 3) 'greater)
+                    ((< 3 3) 'less)
+                    (else    'equal)
+            )   ; => equal
+        \end{lstlisting}
+\end{itemize}
+
+\subsection{Storage model and mutability}
+\begin{itemize}
+    \item Variables and object implicitly refer to locations or sequence of locations in memory (usually the heap)
+    \item Scheme is garbage collected: every object has unlimited extent – memory used by objects that are no longer reachable is reclaimed by the GC
+    \item Constants reside in read-only memory (i.e. regions of the heap explicitly marked to prevent modifications), therefore literal constants (e.g. the vector \#(1 2 3)) are immutable
+    \item If you need e.g. a mutable vector, use the constructor (vector 1 2 3)
+    \item Mutation, when possible, is achieved through "bang procedures", e.g. (vector-set! v 0 "moose")
+\end{itemize}
+Vector are mutable only if created with standard constructor
+\begin{lstlisting}
+    (define (f)
+        (let ((x (vector 1 2 3)))
+            x
+    )   )
+    
+    (define v (f))
+    (vector-set! v 0 10)
+    (display v)(newline) ; => #(10 2 3)
+\end{lstlisting}
+Vector are immutable if created with \#(x y z)
+\begin{lstlisting}
+    (define (g)
+        (let ((x #(1 2 3)))
+            x
+    )   )
+
+    (display (g))(newline) ; = > #(1 2 3)
+    (vector-set! (g) 0 10) ; = > error !
+\end{lstlisting}
+List:
+\begin{itemize}
+    \item In Racket, lists are immutable (so no set-car!, set-cdr!) - this is different from most Scheme implementations (but it is getting more common)
+    \item There is also a mutable pair datatype, with mcons, set-mcar!, set-mcdr!
+\end{itemize}
+
+\subsection{Evaluation Strategy}
+Evaluation strategy: call by object sharing (like in Java): objects are allocated on the heap and references to them are passed by value.
+\begin{lstlisting}
+    (define (test-setting-local d)
+        (set! d "Local") ; setting the local d
+        (display d)(newline))
+
+    (define ob "Global")
+    (test-setting-local ob) ; = > Local
+    (display ob)            ; = > Global
+\end{lstlisting}
+\begin{itemize}
+    \item It is also often called call by value, because objects are evaluated before the call, and such values are copied into the activation record
+    \item The copied value is not the object itself, which remains in the heap, but a reference to the object
+    \item This means that, if the object is mutable, the procedure may exhibit side effects on it
+\end{itemize}
+\begin{lstlisting}
+    (define (set-my-mutable d)
+        (vector-set! d 1 "done")
+        (display d))
+
+    (define ob1 (vector 1 2 3)) ; i.e. #(1 2 3)
+    (set-my-mutable ob1)    ; = > #(1 done 3)
+    (display ob1)           ; = > #(1 done 3)
+\end{lstlisting}
+
+\subsection{Struct}
+It is possible to define new types, through \texttt{struct}.
+The main idea is like struct in C, with some differences.
+\begin{lstlisting}
+    (struct being (
+        name            ; name is immutable
+        (age #:mutable) ; flag for mutability
+    ))
+\end{lstlisting}
+A number of related procedures are automatically created, e.g. the constructor \texttt{being} and a predicate to check if an object is of this type: \texttt{being?} in this case \
+Also accessors (and setters for mutable fields) are created \
+e.g., we can define the following procedure:
+\begin{lstlisting}
+    (define (being-show x)
+        (display (being-name x))
+        (display " (")
+        (display (being-age x))
+        (display ") ")
+    )
+    (define (say-hello x)
+        (if (being ? x) ; ; check if it is a being
+            (begin
+                (being-show x)
+                (display " : my regards . ")
+                (newline))
+            (error " not a being " x)
+        )
+    )
+    ; Example usage:
+    (define james (being "James" 58))
+    (say-hello james)   ; => James (58): my regards.
+    (set-being-age! james 60) ; a setter
+    (say-hello james)   ; => James (58): my regards.
+    ; it is not possible to change its name
+\end{lstlisting}
+Structs can inherit
+\begin{lstlisting}
+    (struct may-being being (   ; being is the father
+        (alive? #:mutable)      ; to be or not to be
+    ))
+
+    (define (kill! x)
+        (if (may-being? x)
+            (set-may-being-alive?! x #f)
+            (error "not a may-being"))
+    )
+
+    (define (try-to-say-hello x)
+        (if (and (my-being? x) (not (may-being-alive? x)))
+            (begin
+                (display "I hear only silence.")
+                (newline)
+            )
+            (say-hello x))
+    )
+    ; Example usage
+    (define john (may-being "Jhon" 77 #t))
+    (say-hello jhon)    ; => John (77): my regards.
+    (kill! jhon)
+    (try-to-say-hello john) ; => I hear only silence.
+\end{lstlisting}
+
+\subsection{Structs vs Object-Oriented programming}
+The main difference is in methods vs procedures:
+\begin{itemize}
+    \item procedures are external, so with inheritance we cannot redefine/override them
+    \item still, a may-being behaves like a being
+    \item but we had to define a new procedure (i.e. try-to-say-hello), to cover the role of say-hello for a may-being
+    \item structs are called records in the standard.
+\end{itemize}
+
+
+\subsection{Closures}
+
+
+
+
+\subsection{Some classical higher order functions}
+\begin{itemize}
+    \item \textbf{map}: \begin{equation} map(f,(e_1,e_2,\ldots,e_n)) = (f(e_1),f(e_2),\ldots,f(e_n)) \end{equation}
+    \item \textbf{filter}: \begin{equation} filter(p(e_1,e_2,\ldots,e_n)) = (e_i|1\leq i\leq n,p(e_i)) \end{equation}
+    \item \textbf{foldr}: \begin{equation} fold_{right}(\circ ,\iota,(e_1,e_2,\ldots,e_n)) = (e_1\circ(e_2\circ\ldots(e_n\circ\iota))) \end{equation}
+    \item \textbf{foldl}: \begin{equation} fold_{left}(\circ ,\iota,(e_1,e_2,\ldots,e_n)) = (e_n\circ(e_{n-1}\circ\ldots(e_1\circ\iota))) \end{equation}
+\end{itemize}
+\todo[inline]{example tail-recursive foldr}
+
+
+\subsection{Meta-programming through Macros}
+\todo[inline]{Example while and let}
+
+\subsection{Hygiene}
+\begin{itemize}
+    \item Scheme macros are hygienic
+    \item this means that symbols used in their definitions are actually replaced with special symbols not used anywhere else in the program
+    \item therefore it is impossible to have name clashes when the macro is expanded
+    \item on the other hand, sometime we want name clashes, so these particular cases can be tricky (we will see an example later)
+\end{itemize}
+
+    
+\subsection{Continuation}
+\todo[inline]{Continuation}
+
+
+\subsection{Exceptions}
+\todo[inline]{Exceptions}
+
+\subsection{Object Oriented programming}
+It is possible to use closures to do some basic OO programming
+\begin{lstlisting}
+    (define (make-simple-object)
+        (let ((my-var 0)) ; attribute
+            ; methods :
+            (define (my-add x)
+                (set ! my-var (+ my-var x))
+                my-var)
+            (define (get-my-var)
+                my-var)
+            (define (my-display)
+                (newline)
+                (display "My Var is : ")
+                (display my-var)
+                (newline))
+            (lambda (message . args)
+                (apply (case message
+                    ((my-add)       my-add)
+                    ((my-display)   my-display)
+                    ((get-my-var)   get-my-var)
+                    (else (error " Unknown Method ! ")))
+                args))))
+\end{lstlisting}
+Example usage:
+\begin{lstlisting}
+    (define a (make-simple-object))
+    (define b (make-simple-object))
+    (a 'my-add 3)       ; => 3
+    (a 'my-add 4)       ; => 7
+    (a 'get-my-var)     ; => 7
+    (b 'get-my-var)     ; => 0
+    (a 'my-display)     ; => My Var is : 7
+\end{lstlisting}
+
+\subsection{Inheritance by delegation}
+\begin{lstlisting}
+    (define (make-son)
+        (let    ((parent    (make-simple-object))  ; inheritance
+                 (name       "anobject"))          
+            ; methods :
+            (define (hello)
+                "hi!")
+            (define (my-display)
+                (newline)
+                (display "My name is ")
+                (display name)
+                (display " and")
+                (parent 'my-display))
+            (lambda (message . args)
+                (case message
+                    ((hello)        (apply hello args))
+                    ; override
+                    ((my-display)   (apply my-display args))
+                    ; parent needed
+                    (else (apply parent (cons message args)))))))
+\end{lstlisting}
+Example usage:
+\begin{lstlisting}
+    (define c (make-son))
+    (c 'my-add 2)        ; => 2
+    (c 'my-display)      ; => My name is an object and
+                         ;    My Var is : 2
+    (display (c 'hello)) ; => hi!
+\end{lstlisting}
+
+\subsection{Prototype-Based Object system}
+Some hash table function:
+\begin{lstlisting}
+(hash-ref hash key [failure-result]) -> any ;Returns the value for key in hash. If no value is found for key, then failure-result determines the result
+(hash-set! hash key v) -> void? ; Maps key to v in hash, overwriting any existing mapping for key.
+\end{lstlisting}
+
+An object is implemented with a hash table
+
+\begin{lstlisting}
+    (define new-object make-hash)
+    (define clone hash-copy)
+\end{lstlisting}
+keys are attribute/method names. \
+Just for convenience:
+\begin{lstlisting}
+    (define-syntax !!       ; setter
+        (syntax-rules ()
+            ((_ object msg new-val)
+             (hash-set! object 'msg new-val))))
+    (define-syntax ??       ; reader
+        (syntax-rules ()
+            ((_ object msg)
+             (hash-ref object 'msg))))
+    (define-syntax - >      ; send message
+        (syntax-rules ()
+            ((_ object msg arg ...)
+             ((hash-ref object 'msg) object arg ...))))
+\end{lstlisting}
+First, we define an object and its methods
+\begin{lstlisting}
+    (define Pino (new-object))
+    (!! Pino name "Pino")   ; slot added
+    (!! Pino hello 
+        (lambda (self x)
+            (display (?? self name))
+            (display ": hi, ")
+            (display (?? x name"))
+            (display "!")
+            (newline)))
+    (!! Pino set-name
+        (lambda (self x)
+            (!! self name x)))
+    (!! Pino set-name-&-age
+        (lambda (self n a)
+            (!! self name n)
+            (!! self age a)))
+\end{lstlisting}
+Now create object Pina as clone of Pino
+\begin{lstlisting}
+    (define Pina (clone Pino))
+    (!! Pina name "Pina")
+    ; example usage
+    (-> Pino hello Pina)    ; Pino: hi, Pina!
+    (-> Pino set-name "Ugo")
+    (-> Pina set-name-&-age "Lucia" 25)
+    (-> Pino hello Pina)    ; Ugo: hi, Lucia!
+\end{lstlisting}
+
+
+\subsection{Proto-OO: Inheriance}
+\begin{lstlisting}
+    (define (son-of parent)
+        (let ((o (new-object)))
+            (!! o <<parent>> parent)
+            o))
+    ; Basic dispatching
+    (define (dispatch object msg)
+        (if (eq? object 'unknown)
+            (error "Unknown message" message)
+            (let ((slot (hash-ref object msg 'unknown)))
+                (if (eq? slot 'unknown)
+                    (dispatch (hash-ref object '<<parent>> 'unknown) msg)
+                    slot))))
+
+    ; Have to modify ?? and -> for dispatching
+    (define-syntax ??       ; reader
+        (syntax-rules ()
+            ((_ object msg)
+             (dispatch object 'msg))))
+    (define-syntax - >      ; send message
+        (syntax-rules ()
+            ((_ object msg arg ...)
+             ((dispatch object 'msg) object arg ...))))
+\end{lstlisting}
+Example usage:
+\begin{lstlisting}
+    (define Glenn (son-of Pino))
+    (!! Glenn name "Glenn")
+    (!! Glenn age 50)
+    (!! Glenn get-older
+        (lambda (self)
+            (!! self age (+ 1 (?? self age)))))
+    
+    (-> Glenn hello Pina)   ; Glenn: hi, Pina!
+    (-> Glenn ciao)         ; error: Unknown message
+    (-> Glenn get-older)    ; Glenn is now 51
+\end{lstlisting}

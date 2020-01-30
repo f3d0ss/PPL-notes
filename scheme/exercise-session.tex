@@ -1,0 +1,471 @@
+\subsection{2019-10-01}
+\begin{lstlisting}
+#lang racket
+
+;; Let us define a variable.
+(define hw "Hello world!")
+
+;; Let us define a variable.
+(define (hello)
+  (display hw))
+
+;; Try (display (hello))
+;; Try (display hello)
+
+;; We can do it as a lambda as well.
+(define world
+  (lambda () (display hw)))
+
+;; Given an associative binary operator OP and a positive Natural number n, we want to compute 1 OP 2 OP 3 OP ... OP n
+;; Let us try to do it with `+'.
+(define (sum-range n)
+  (if (<= n 1)
+      1
+      (+ n (sum-range (- n 1)))))
+
+;; Now we generalize it
+(define (fold-range op n e)
+  (if (<= n 0)
+      e
+      (op n (fold-range op (- n 1) e))))
+
+;; Try this:
+(fold-range + 42 0)
+(fold-range * 6 1)
+
+;; Tail-recursive
+(define (fold-range-tail op n e)
+  (define (fold-range-tail-aux n acc)
+    (if (<= n 0)
+        acc
+        (fold-range-tail-aux (- n 1) (op n acc))))
+  (fold-range-tail-aux n e))
+
+;; Try this:
+(fold-range-tail + 42 0)
+(fold-range-tail * 6 1)
+
+;; "Iterative"
+(define (fold-range-it op n e)
+  (let count ((x n) (acc e))
+    (if (<= x 0)
+        acc
+        (count (- x 1) (op x acc)))))
+
+;; Try this:
+(fold-range-it + 42 0)
+(fold-range-it * 6 1)
+
+;; Now try this:
+(fold-range-it (lambda (x y)
+                  (+ (* x x) y))
+                10
+                0)
+(fold-range-tail (lambda (x y)
+                    (+ (* x x) y))
+                  10
+                  0)
+(fold-range (lambda (x y)
+               (+ (* x x) y))
+             10
+             0)
+
+;; Let us do something with lists
+(define thelist '(1 2 3))
+(cons 1 2)
+(list? (cons 1 2))
+(pair? thelist)
+(cons 1 (cons 2 (cons 3 '())))
+(car thelist)
+(car (cdr (cdr thelist)))
+(cadr thelist) ; aka (car (cdr l))
+(caddr thelist) ; aka (car (cdr (cdr l)))
+
+;; And now this:
+(fold-range-it cons 42 '())
+(fold-range-tail cons 42 '())
+(fold-range cons 42 '())
+
+;; Reverse pair
+(define (riap p)
+  (if (not (pair? p))
+      (error (append (~a p) " is not a pair!"))
+      (let ((f (car p))
+            (s (cdr p)))
+        (cons s f))))
+
+;; Reverse list
+(define (tsil l)
+  (cond [(not (list? l)) (error (string-append (~a l) " is not a list!"))]
+        [(null? l) l]
+        [else (append (tsil (cdr l)) (list (car l)))]))
+
+;; Flatten list
+(define (flatten l)
+  (cond [(null? l) l]
+        [(not (list? l)) (list l)]
+        [else (append (flatten (car l)) (flatten (cdr l)))]))
+
+;; Try this:
+(flatten '(1 2 3 4))
+(flatten '((1) 2 ((3 4) 5) (((6)))))
+
+;; Sorted list merge
+(define (merge l1 l2)
+  (cond [(not (and (list? l1) ( list? l2))) (error "Supplied with non-list argument!")]
+        [(null? l1) l2]
+        [(null? l2) l1]
+        [else (let ((f1 (car l1)) (f2 (car l2)))
+                (if (<= f1 f2)
+                    (cons f1 (merge (cdr l1) l2))
+                    (cons f2 (merge l1 (cdr l2)))))]))
+
+;; More general
+(define (merge-gen compar l1 l2)
+  (cond [(not (and (list? l1) ( list? l2))) (error "Supplied with non-list argument!")]
+        [(null? l1) l2]
+        [(null? l2) l1]
+        [else (let ((f1 (car l1)) (f2 (car l2)))
+                (if (compar f1 f2)
+                    (cons f1 (merge-gen compar (cdr l1) l2))
+                    (cons f2 (merge-gen compar l1 (cdr l2)))))]))
+
+(define (half-split l)
+  (when (not (list? l)) (error "Supplied with non-list argument!"))
+      (define (half-split-aux l1 l2 l3)
+        (if (null? l3)
+            (cons l1 l2)
+            (half-split-aux (cons (car l3) l2) l1 (cdr l3))))
+      (half-split-aux '() '() l))
+
+;; Merge-sort algorithm
+(define (merge-sort compar l)
+  (cond [(not (list? l)) (error (string-append (~a l) " is not a list."))]
+        [(null? l) l]
+        [(null? (cdr l)) l]
+        [else (let ((halves (half-split l)))
+                (merge-gen compar
+                           (merge-sort compar (car halves))
+                           (merge-sort compar (cdr halves))))]))
+
+\end{lstlisting}
+\subsection{2019-10-08}
+\begin{lstlisting}
+#lang racket
+
+;; Function that splits a list in two halves
+(define (half-split-simple l)
+  (let ((half (ceiling (/ (length l) 2))))
+    (cons (take l half) (drop l half))))
+
+;; Same, but hand-crafted.
+(define (half-split l)
+  (let split ((sec l)
+              (last l))
+    (cond [(null? last) (cons '() sec)]
+          [(null? (cdr last)) (cons (list (car sec)) (cdr sec))]
+          [else (let ((halves (split (cdr sec) (cddr last))))
+                  (cons (cons (car sec) (car halves)) (cdr halves)))])))
+
+;; Structs
+
+;; Binary tree
+
+(struct node-base
+  ((value #:mutable)))
+
+(struct node node-base
+  (left right))
+
+(define (create-leaf v)
+  (node-base v))
+
+(define (create-internal v l r)
+  (node v l r))
+
+(define (leaf? n)
+  (and (node-base? n) (not (node? n))))
+
+(define (display-leaf l)
+  (if (leaf? l)
+      (begin
+        (display "[Leaf ")
+        (display (node-base-value l))
+        (display "]"))
+      (display "NOt a leaf!")))
+
+(define (display-tree t)
+  (cond [(leaf? t) (display-leaf t)]
+        [(node? t) (begin
+                     (display "[Node ")
+                     (display (node-base-value t))
+                     (display " ")
+                      (display-tree (node-left t))
+                     (display " ")
+                     (display-tree (node-right t))
+                     (display "]"))]
+        [else (display "NOt a tree.")]))
+
+(define foo (node 3 (node-base 2) (node-base 1)))
+
+(define inc (lambda (x) (+ x 1)))
+
+(define (tree-map f t)
+  (if (leaf? t)
+      (node-base (f (node-base-value t)))
+      (node (f (node-base-value t))
+            (tree-map f (node-left t))
+            (tree-map f (node-right t)))))
+
+(define (tree-map! f t)
+  (begin
+    (if (leaf? t)
+        (set-node-base-value! t (f (node-base-value t)))
+        (begin
+          (set-node-base-value! t (f (node-base-value t)))
+          (tree-map! f (node-left t))
+          (tree-map! f (node-right t))))))
+
+;; Macros
+
+(define-syntax ++
+  (syntax-rules ()
+    ((_ i)
+     (begin
+       (set! i (+ 1 i))
+       i))))
+
+(define a1 1)
+(++ a1)
+
+(define (+++ x . rest)
+  (begin
+    (++ x)
+    (if (null? rest)
+        (list x)
+        (cons x (apply +++ rest)))))
+
+(define a2 2)
+(define a3 3)
+(+++ a1 a2 a3) ;; +++ this does not modify a1 a2 and a3! We need a macro.
+
+;; This way:
+(define-syntax ++++
+  (syntax-rules ()
+    ((_ x)
+     (begin
+       (++ x)
+       (list x)))
+    ((_ x . rest)
+     (begin
+       (++ x)
+       (cons x (++++ . rest))))))
+
+(++++ a1 a2 a3)
+
+;; Or this way:
+(define-syntax ++++p
+  (syntax-rules ()
+    ((_)
+     '())
+    ((_ x r ...)
+     (begin
+       (++ x)
+       (cons x (++++p r ...))))))
+
+(++++p a1 a2 a3)
+
+;; Pascal's repeat-until.
+(define-syntax repeat
+  (syntax-rules (until)
+    ((_ stmt ... until cond)
+     (let loop ()
+       (begin
+         stmt ...
+         (unless cond
+           (loop)))))))
+
+(let ((x 1) (y 10))
+  (repeat (++ x)
+          (display x)
+          (newline)
+          until (> x y)))
+\end{lstlisting}
+\subsection{2019-10-08}
+\begin{lstlisting}
+#lang racket
+
+;; Let us see some continuations
+(define (right-now)
+  (call/cc
+   (lambda (cc)
+     (cc "Now"))))
+
+(define (test-cc)
+  (display (call/cc
+            (lambda (escape)
+              (display "cat\n")
+              (escape "paw\n")
+              "bacon\n"))))
+
+;; We can make a generator of factorials
+(define fact-gen #f)
+(define (get-fact-gen)
+  (let ((f 1) (n 1))
+    (call/cc
+     (lambda (cont)
+       (set! fact-gen cont)))
+    (set! f (* f n))
+    (set! n (+ n 1))
+    f))
+
+;; Try (get-fact-gen)   -> 1
+;;     (fact-gen)       -> 2
+;;     (define fact-gen2 fact-gen)
+;;     (fact-gen)       -> 6
+;;     (fact-gen2)      -> 24
+
+;; This never terminates. Why?
+(define (some-fact)
+  (get-fact-gen)
+  (displayln "asd")
+  (fact-gen))
+
+;; We can make a break statement
+(define (break-negative)
+  (call/cc
+   (lambda (break)
+     (for-each (lambda (x)
+                 (if (>= x 0)
+                     (begin
+                       (display x)
+                       (newline))
+                     (break)))
+               '(0 1 2 -3 4 5)))))
+
+;; Or a continue statement
+(define (skip-negative)
+  (for-each (lambda (x)
+              (call/cc
+               (lambda (continue)
+                 (if (>= x 0)
+                     (displayln x)
+                     (continue 'neg)))))
+            '(0 1 2 -3 4 5)))
+
+;; And a while with break and continue
+(define-syntax while-do
+  (syntax-rules (od break: continue:)
+    ((_ guard od stmt ... break: br-stmt continue: cont-stmt)
+     (call/cc
+      (lambda (br-stmt)
+        (let loop ((guard-val (guard)))
+          (call/cc
+           (lambda (cont-stmt)
+             (when guard-val
+               stmt ...)))
+           (when guard-val
+             (loop (guard)))))))))
+
+(define (display-positive l)
+  (let ((i l))
+    (while-do (lambda ()
+                (pair? i))
+              od
+              (let ((x (car i)))
+                (unless (number? x)
+                  (stop))
+                (set! i (cdr i))
+                (unless (>= x 0)
+                  (cont))
+                (displayln x))
+              break: stop
+              continue: cont)))
+;; Try (display-positive '(0 1 2 3 -5 4 'asd 9))
+
+;; Nondeterministic choices
+
+; First, we need a FIFO queue
+(define *paths* '())
+(define (choose choices)
+  (if (null? choices)
+      (fail)
+      (call/cc
+       (lambda (cc)
+         (set! *paths*
+               (cons (lambda ()
+                       (cc (choose (cdr choices))))
+                     *paths*))
+         (car choices)))))
+
+(define fail #f)
+(call/cc
+ (lambda (cc)
+   (set! fail
+         (lambda ()
+           (if (null? *paths*)
+               (cc 'failure)
+               (let ((p1 (car *paths*)))
+                 (set! *paths* (cdr *paths*))
+                 (p1)))))))
+
+              
+(define (is-the-sum-of sum)
+  (unless (and (>= sum 0)
+               (<= sum 10))
+    (error "out of range"))
+  (let ((x (choose '(0 1 2 3 4 5)))
+        (y (choose '(0 1 2 3 4 5))))
+    (if (= (+ x y) sum)
+        (list x y)
+        (fail))))
+
+
+(define *queue* '())
+(define (enqueue x)
+  (set! *queue* (append *queue* (list x))))
+(define (dequeue)
+  (unless (empty-queue?)
+    (let ((x (car *queue*)))
+      (set! *queue* (cdr *queue*))
+      x)))
+(define (empty-queue?)
+  (null? *queue*))
+
+(define (start-coroutine proc)
+  (call/cc
+   (lambda (cc)
+     (enqueue cc)
+     (proc))))
+
+(define (yield)
+  (call/cc
+   (lambda (cc)
+     (enqueue cc)
+     ((dequeue)))))
+
+(define (exit-coroutine name)
+  (displayln (string-append name ": exit."))
+  (if (empty-queue?)
+      (exit)
+      ((dequeue))))
+
+(define (say-something name n)
+  (lambda ()
+    (let loop ((i 0))
+      (display name)
+      (display ": ")
+      (displayln i)
+      (yield)
+      (if (< i n)
+          (loop (+ i 1))
+          (exit-coroutine name)))))
+
+(define (test-cr)
+  (start-coroutine (say-something "A" 3))
+  (start-coroutine (say-something "B" 2))
+  (exit-coroutine "main"))
+
+;; Try (test-cr)
+
+\end{lstlisting}
