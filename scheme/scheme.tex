@@ -1,27 +1,27 @@
-\section{Scheme}
+
 
 \subsection{Lambda}
 Lambdas are unnamed procedures
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (lambda (x y) ; this is a comment
         (+ (* x x) (* y y)))
 \end{lstlisting}
 Example usage:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     ((lambda (x y) (+ (* x x) (* y y))) 2 3) ; => 23
 \end{lstlisting}
 
 \subsection{Let}
 Scope is \textbf{static}
 let example:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (let ((x 2)
           (y 3))
         ;here go the code using x,y
     )
 \end{lstlisting}
 let binds variables "in parallel":
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (let ((x 1)
           (y 2))
         (let ((x y)
@@ -33,30 +33,30 @@ let binds variables "in parallel":
 
 \subsection{Quoting}
 Syntax form to prevent evaluation
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (quote <expr>)
     ;equivalent to
     '<expr>
 \end{lstlisting}
 <expr> is left unevaluated
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (quote (1 2 3)) ;is a list
     (quote (+ 1 2)) ;is another list
 \end{lstlisting}
 \textit{quasiquote} (‘) and \textit{unquote} (,) are used for partial evaluation
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     '(1 2 3) ;is a list (1 2 3)
     `(1 ,(+ 1 1) 2) ;is another list (1 2 3)
 \end{lstlisting}
 
 \subsection{Eval}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     eval '(+ 1 2 3) ;is 6
 \end{lstlisting}
 
 \subsection{Begin}
 Use \textbf{begin} to write block of procedural code:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (begin
         (op-1 ...)
         (op-2 ...)
@@ -69,26 +69,26 @@ Every op-i is evaluated in order and the value of the block is the value obtaine
 
 \subsection{Definitions}
 To create top-level bindings there is \textbf{define}:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define <name> <what>)
     ;example
     (define x 12)
     (define y #(1 2 3))
 \end{lstlisting}
 Defining procedures:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define cube (lambda (x) (* x x x)))
     (cube 3) ; = 27
 \end{lstlisting}
 Short notation to define procedures:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (cube x) (* x x x))
     (cube 3) ; = 27
 \end{lstlisting}
 
 \subsection{Assignment}:
 Use \textbf{set!} for assignement:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (begin
         (define x 23)
         (set! x 42)
@@ -106,26 +106,26 @@ A list (1 2 3) is stored like this (1 . (2 . (3 . ()))) \
 () is the empty list \
 The two procedures \textbf{car} and \textbf{cdr} are used as accessors \
 \textbf{member} is used to check if a list contains a value:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (member 2 '(1 2 3)) ; => '(2 3)
 \end{lstlisting}
 
 Define a procedure with variable number if argument
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (x . y) y)
     (x 1 2 3)  ; = > '(1 2 3)
 \end{lstlisting}
 \textbf{apply} can be used to apply procedure to list of elements:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (apply + '(1 2 3 4)) ; = 10
 \end{lstlisting}
 To build pair we can use \textbf{cons}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (cons 1 2) ;    = (1 . 2)
     (cons 1 '(2)) ; = (1 2)
 \end{lstlisting}
 Example, find minimum of a list:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (minimum L)
         (let ((x (car L))
               (xs (cdr L)))
@@ -140,7 +140,7 @@ Example, find minimum of a list:
     (minimum '(11 -3 2 3 8 -15 0)) ; = > -15
 \end{lstlisting}
 Variant with variable number of argument:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (minimum x . rest)
         (if (null ? rest)   ; is rest = ()?
             x               ; then return x
@@ -160,7 +160,7 @@ Variant with variable number of argument:
 
 \subsection{Loop}
 Example:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (let label ((x 0))
         (when (< x 10)
             (display x)
@@ -173,7 +173,7 @@ We can use as many variables as we like, value obtained by the last expression.
 
 \subsection{Tail recursion}
 Example \textbf{not tail recursive}:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (factorial n)
         (if (= n 0)
             1
@@ -182,7 +182,7 @@ Example \textbf{not tail recursive}:
     )
 \end{lstlisting}
 Example \textbf{tail recursive}:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (fact x)
         (define (fact-tail x accum)  ;local proc
             (if (= x 0)
@@ -194,7 +194,7 @@ Example \textbf{tail recursive}:
     )
 \end{lstlisting}
 To avoid stack consumption it can be optimize (indeed, the previous tail call is translated in the following low-level code)
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (fact-low-level n)
         (define x n)
         (define accum 1)
@@ -211,7 +211,7 @@ To avoid stack consumption it can be optimize (indeed, the previous tail call is
     )
 \end{lstlisting}
 A more idiomatic way of writing it is the following:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (fact-low-level n)
         (let loop ((x n)
               (accum 1))
@@ -227,21 +227,21 @@ But note that this looks like a tail call. . .
 recursive, when compiled it becomes a simple jump.)
 
 \subsection{for-each}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (for-each (lambda (x)
                 (display x)(newline))
             '(this is it)
     )
 \end{lstlisting}
 For vector:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (vector-for-each (lambda (x)
                         (display x)(newline))
                     #(this is it)
     )
 \end{lstlisting}
 Here is the definition:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (vector-for-each body vect)
         (let ((max (- (vector-leght vect) 1)))
             (let loop ((i 0))
@@ -269,7 +269,7 @@ Here is the definition:
 \subsection{Case and Cond}
 \begin{itemize}
     \item case:
-        \begin{lstlisting}
+        \begin{lstlisting}[language=Lisp]
             (case (car '(c d))
                 ((a e i o u)    'vowel)
                 ((w y)          'semivowel)
@@ -277,7 +277,7 @@ Here is the definition:
             )   ; => constant
         \end{lstlisting}
     \item cond:
-        \begin{lstlisting}
+        \begin{lstlisting}[language=Lisp]
             (cond   ((> 3 3) 'greater)
                     ((< 3 3) 'less)
                     (else    'equal)
@@ -294,7 +294,7 @@ Here is the definition:
     \item Mutation, when possible, is achieved through "bang procedures", e.g. (vector-set! v 0 "moose")
 \end{itemize}
 Vector are mutable only if created with standard constructor
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (f)
         (let ((x (vector 1 2 3)))
             x
@@ -305,7 +305,7 @@ Vector are mutable only if created with standard constructor
     (display v)(newline) ; => #(10 2 3)
 \end{lstlisting}
 Vector are immutable if created with \#(x y z)
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (g)
         (let ((x #(1 2 3)))
             x
@@ -322,7 +322,7 @@ List:
 
 \subsection{Evaluation Strategy}
 Evaluation strategy: call by object sharing (like in Java): objects are allocated on the heap and references to them are passed by value.
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (test-setting-local d)
         (set! d "Local") ; setting the local d
         (display d)(newline))
@@ -336,7 +336,7 @@ Evaluation strategy: call by object sharing (like in Java): objects are allocate
     \item The copied value is not the object itself, which remains in the heap, but a reference to the object
     \item This means that, if the object is mutable, the procedure may exhibit side effects on it
 \end{itemize}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (set-my-mutable d)
         (vector-set! d 1 "done")
         (display d))
@@ -349,7 +349,7 @@ Evaluation strategy: call by object sharing (like in Java): objects are allocate
 \subsection{Struct}
 It is possible to define new types, through \texttt{struct}.
 The main idea is like struct in C, with some differences.
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (struct being (
         name            ; name is immutable
         (age #:mutable) ; flag for mutability
@@ -358,7 +358,7 @@ The main idea is like struct in C, with some differences.
 A number of related procedures are automatically created, e.g. the constructor \texttt{being} and a predicate to check if an object is of this type: \texttt{being?} in this case \
 Also accessors (and setters for mutable fields) are created \
 e.g., we can define the following procedure:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (being-show x)
         (display (being-name x))
         (display " (")
@@ -382,7 +382,7 @@ e.g., we can define the following procedure:
     ; it is not possible to change its name
 \end{lstlisting}
 Structs can inherit
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (struct may-being being (   ; being is the father
         (alive? #:mutable)      ; to be or not to be
     ))
@@ -454,7 +454,7 @@ The main difference is in methods vs procedures:
 
 \subsection{Object Oriented programming}
 It is possible to use closures to do some basic OO programming
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (make-simple-object)
         (let ((my-var 0)) ; attribute
             ; methods :
@@ -477,7 +477,7 @@ It is possible to use closures to do some basic OO programming
                 args))))
 \end{lstlisting}
 Example usage:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define a (make-simple-object))
     (define b (make-simple-object))
     (a 'my-add 3)       ; => 3
@@ -488,7 +488,7 @@ Example usage:
 \end{lstlisting}
 
 \subsection{Inheritance by delegation}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (make-son)
         (let    ((parent    (make-simple-object))  ; inheritance
                  (name       "anobject"))          
@@ -510,7 +510,7 @@ Example usage:
                     (else (apply parent (cons message args)))))))
 \end{lstlisting}
 Example usage:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define c (make-son))
     (c 'my-add 2)        ; => 2
     (c 'my-display)      ; => My name is an object and
@@ -520,20 +520,20 @@ Example usage:
 
 \subsection{Prototype-Based Object system}
 Some hash table function:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
 (hash-ref hash key [failure-result]) -> any ;Returns the value for key in hash. If no value is found for key, then failure-result determines the result
 (hash-set! hash key v) -> void? ; Maps key to v in hash, overwriting any existing mapping for key.
 \end{lstlisting}
 
 An object is implemented with a hash table
 
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define new-object make-hash)
     (define clone hash-copy)
 \end{lstlisting}
 keys are attribute/method names. \
 Just for convenience:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define-syntax !!       ; setter
         (syntax-rules ()
             ((_ object msg new-val)
@@ -548,7 +548,7 @@ Just for convenience:
              ((hash-ref object 'msg) object arg ...))))
 \end{lstlisting}
 First, we define an object and its methods
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define Pino (new-object))
     (!! Pino name "Pino")   ; slot added
     (!! Pino hello 
@@ -567,7 +567,7 @@ First, we define an object and its methods
             (!! self age a)))
 \end{lstlisting}
 Now create object Pina as clone of Pino
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define Pina (clone Pino))
     (!! Pina name "Pina")
     ; example usage
@@ -579,7 +579,7 @@ Now create object Pina as clone of Pino
 
 
 \subsection{Proto-OO: Inheriance}
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define (son-of parent)
         (let ((o (new-object)))
             (!! o <<parent>> parent)
@@ -604,7 +604,7 @@ Now create object Pina as clone of Pino
              ((dispatch object 'msg) object arg ...))))
 \end{lstlisting}
 Example usage:
-\begin{lstlisting}
+\begin{lstlisting}[language=Lisp]
     (define Glenn (son-of Pino))
     (!! Glenn name "Glenn")
     (!! Glenn age 50)
