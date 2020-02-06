@@ -4,8 +4,6 @@
 %-export([add/2, factorial/1, factorial/2]).
 -compile(export_all).
 
-%% NOTE: compile with c('2019-12-10-a').
-
 add(A, B) ->
     A + B.
 
@@ -72,7 +70,6 @@ merge([X | Xs], [Y | Ys]) ->
         [Y | merge([X | Xs], Ys)]
     end.
 
-
 merge_sort(L) ->
     spawn(?MODULE, ms_split, [self(), left, L]),
     receive
@@ -102,8 +99,6 @@ ms_merge(Parent, Side, Ll, Lr) ->
     Parent ! {Side, merge(Ll, Lr)}.
 
 
-
-
 split(_, B) when B < 0 -> err;
 split(A, B) when length(A) < B -> err;
 split([A|As],B) when length(As) =:= B ->  {A,As}.
@@ -128,8 +123,6 @@ split_map(F, L, N) ->
 \begin{lstlisting}
 -module('2019-12-10-b').
 -compile(export_all).
-
-%% NOTE: compile with c('2019-12-10-b').
 
 start_broker() ->
     BrokerPid = spawn(?MODULE, broker, []),
