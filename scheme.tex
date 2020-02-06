@@ -1,0 +1,48 @@
+\input{header.tex}
+
+% \newwatermark[allpages,color=black!10,angle=45,scale=6,xpos=-20,ypos=15]{DRAFT}
+\lstset{frame=tb,
+  language=Lisp,
+  aboveskip=3mm,
+  belowskip=3mm,
+  showstringspaces=false,
+  columns=flexible,
+  basicstyle={\small\ttfamily},
+  numbers=none,
+  numberstyle=\tiny\color{gray},
+  keywordstyle=\color{blue},
+  commentstyle=\color{dkgreen},
+  stringstyle=\color{mauve},
+  breaklines=true,
+  breakatwhitespace=true,
+  tabsize=3
+}
+
+
+\begin{document}
+
+\raggedright
+\footnotesize
+\begin{multicols}{3}
+% multicol parameters
+% These lengths are set only within the two main columns
+%\setlength{\columnseprule}{0.25pt}
+\setlength{\premulticols}{1pt}
+\setlength{\postmulticols}{1pt}
+\setlength{\multicolsep}{1pt}
+\setlength{\columnsep}{2pt}
+
+{\Large{\textbf{Principle of Programming Languages}}}
+
+\section{Scheme}
+\input{scheme/scheme.tex}
+
+\section{Exams}
+\input{scheme/exams.tex}
+
+\section{Exercise session}
+\input{scheme/exercise-session.tex}
+
+\rule{0.3\linewidth}{0.25pt}
+\end{multicols}
+\end{document}

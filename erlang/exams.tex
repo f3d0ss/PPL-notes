@@ -1,0 +1,133 @@
+\subsection{2020-01-15}
+We want to implement something like Python’s \texttt{range} in Erlang, using processes. \\
+E.g. 
+\begin{lstlisting}
+    R = range(1,5,1)    % starting value, end value, step
+    next(R)             % is 1
+    next(R)             % is 2
+    . . .
+    next(R)             % is 5
+    next(R)             % is the atom stop_iteration
+\end{lstlisting}
+Define \texttt{range} and \texttt{next}, where \texttt{range} creates a process that manages the iteration, and \texttt{next} a function that
+talks with it, asking the current value. \\
+Solution:
+\begin{lstlisting}
+    ranger(Current, Stop, Inc) ->
+        receive
+            {Pid, next} ->
+                if
+                    Current =:= Stop -> Pid ! stop_iteration;
+                    true -> Pid ! Current,
+                            ranger(Current + Inc, Stop, Inc)
+                end 
+        end.
+   range(Start, Stop, Inc) ->
+        spawn(?MODULE, ranger, [Start, Stop, Inc]).
+   next(Pid) ->
+        Pid ! {self(), next},
+        receive
+            V -> V
+        end.
+\end{lstlisting}
+
+
+
+
+\subsection{2019-09-03}
+\begin{itemize}
+    \item 1) Define a split function, which takes a list and a number n and returns a pair of lists, where the first one is  the prefix of the given list, and the second one is the suffix of the list of length n. \\ E.g. split([1,2,3,4,5], 2) is {[1,2,3],[4,5]}
+    \item 2) Using split of 1), define a splitmap function which takes a function f, a list L, and a value n, and splits L with parameter n, then launches two process to map f on each one of the two lists resulting from the split. The function splitmap must return a pair with the two mapped lists.
+\end{itemize}
+\begin{lstlisting}
+    helper(E, {0, L}) ->
+        {-1, [[E]|L]};
+    helper(E, {V, [X|Xs]}) ->
+        {V-1, [[E|X]|Xs]}.
+
+    split(L, N) ->
+        {_, R} = lists:foldr(fun helper/2, {N, [[]]}, L),
+        R.
+        
+    mapper(F, List, Who) ->
+        Who ! {self(), lists:map(F, List)}.
+
+    splitmap(F, L, N) ->
+        [L1, L2] = split(L, N),
+        P1 = spawn(?MODULE, mapper, [F, L1, self()]),
+        P2 = spawn(?MODULE, mapper, [F, L2, self()]),
+        receive
+            {P1, V1} ->
+                receive {P2, V2} ->
+                        {V1, V2}
+                end
+        end.
+\end{lstlisting}
+
+
+
+
+
+
+
+
+
+\subsection{2019-07-24}
+Define a master process which takes a list of nullary (or 0-arity) functions, and starts a worker process for
+each of them. The master must monitor all the workers and, if one fails for some reason, must re-start it to
+run the same code as before. The master ends when all the workers are done. \\
+Note: for simplicity, you can use the library function spawn\_link/1, which takes a lambda function, and spawns and links a process running it. \\
+
+\begin{lstlisting}
+    listlink([], Pids) -> Pids;
+    listlink([F|Fs], Pids) ->
+        Pid = spawn_link(F),
+        listlink(Fs, Pids#{Pid => F}).
+
+    master(Functions) ->
+        process_flag(trap_exit, true),
+        Workers = listlink(Functions, #{}),
+        master_loop(Workers, length(Functions)).
+
+    master_loop(Workers, Count) ->
+        receive
+            {'EXIT', Child, normal} ->
+                if
+                    Count =:= 1 -> ok;
+                    true -> master_loop(Workers, Count-1)
+                end;
+            {'EXIT', Child, _} ->
+                #{Child := Fun} = Workers,
+                Pid = spawn_link(Fun),
+                master_loop(Workers#{Pid => Fun}, Count)
+        end.
+\end{lstlisting}
+
+\subsection{2019-06-28}
+Being bu and the two cf spawn-linked, we need to terminate the main process with exit to kill them. If we do not do
+so, we get an unending sequence of “no data”. Hence, we could change “{P1, done} -> ok” into {P1, done} -> exit(done)”.
+The output of the system is correct, because it is possible that some elements remain in the buffer, being the buffer managed as a
+stack.
+
+\subsection{2019-02-08}
+lists:nth(V,Buf) (get element V of array B) V=1,2,3,..
+
+\subsection{2019-01-16}
+Define a process P, having a local behavior (a function), that answer to three commands: \\
+\textbf{- load} is used to load a new function f on P: the previous behavior is composed with f; \\
+\textbf{- run} is used to send some data D to P: P returns its behavior applied to D; \\
+\textbf{- stop} is used to stop P. \\
+For security reasons, the process must only work with messages coming from its creator: other messages must be discarded.
+\begin{lstlisting}
+    cam(Beh, Who) ->
+    receive
+        {run, Who, What} ->
+            Who ! Beh(What),
+            cam(Beh, Who);
+        {load, Who, Code} ->
+            cam(fun (X) -> Code(Beh(X)) end, Who);
+        {stop, Who} ->
+            ok;
+        _ -> cam(Beh, Who)
+    end.
+\end{lstlisting}

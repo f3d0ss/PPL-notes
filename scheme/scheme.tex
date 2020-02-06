@@ -102,9 +102,9 @@ Lists are memorized as concatenated pairs, a pair (written (x . y), also called 
     \item \textbf{car} (i.e. x) aka Content of the Address Register (take the first element of a list)
     \item \textbf{cdr} (i.e. y) aka Content of the Data Register (take the list without the first element)
 \end{itemize}
-A list (1 2 3) is stored like this (1 . (2 . (3 . ()))) \
-() is the empty list \
-The two procedures \textbf{car} and \textbf{cdr} are used as accessors \
+A list (1 2 3) is stored like this (1 . (2 . (3 . ()))) \\
+() is the empty list \\
+The two procedures \textbf{car} and \textbf{cdr} are used as accessors \\
 \textbf{member} is used to check if a list contains a value:
 \begin{lstlisting}[language=Lisp]
     (member 2 '(1 2 3)) ; => '(2 3)
@@ -347,7 +347,13 @@ Evaluation strategy: call by object sharing (like in Java): objects are allocate
 \end{lstlisting}
 
 \subsection{Struct}
-It is possible to define new types, through \texttt{struct}.
+It is possible to define new types, through
+
+
+
+
+
+texttt{struct}.
 The main idea is like struct in C, with some differences.
 \begin{lstlisting}[language=Lisp]
     (struct being (
@@ -419,8 +425,25 @@ The main difference is in methods vs procedures:
 
 
 \subsection{Closures}
-
-
+A closure is a function together with a referencing environment for the
+non-local variables of that function \
+i.e. a function object that "closes" over its visible variables \
+example:
+\begin{lstlisting}
+    (define (iter-vector vec)
+        (let    ((cur 0)
+                (top (vector-length vec)))
+            (lambda ()
+                (if (= cur top)
+                    '<< end > >
+                    (let ((v (vector-ref vec cur)))
+                        (set ! cur (+ cur 1))
+                        v)))))
+    (define i (iter-vector #(1 2)))
+    (i)    ; => 1
+    (i)    ; => 2
+    (i)    ;  = > '<< end > >
+\end{lstlisting}
 
 
 \subsection{Some classical higher order functions}
@@ -430,12 +453,73 @@ The main difference is in methods vs procedures:
     \item \textbf{foldr}: \begin{equation} fold_{right}(\circ ,\iota,(e_1,e_2,\ldots,e_n)) = (e_1\circ(e_2\circ\ldots(e_n\circ\iota))) \end{equation}
     \item \textbf{foldl}: \begin{equation} fold_{left}(\circ ,\iota,(e_1,e_2,\ldots,e_n)) = (e_n\circ(e_{n-1}\circ\ldots(e_1\circ\iota))) \end{equation}
 \end{itemize}
-\todo[inline]{example tail-recursive foldr}
-
-
+Examples
+\begin{lstlisting}
+    ((map (lambda (x) (+ 1 x)) '(0 1 2)) ; = > (1 2 3)
+    (filter (lambda (x) (> x 0)) '(10 -11 0)) ; = > (10)
+    (foldl string-append "" '("una" " " "bella" " " "giornata")) ; = > "giornata bella una"
+    (foldl cons '() '(1 2 3)) ; = > (3 2 1)
+    (foldr cons '() '(1 2 3)) ; = > (1 2 3)
+    (foldl * 1 '(1 2 3 4 5 6)) ; i . e . factorial ; = > 720
+\end{lstlisting}
+Example implementation of folds (foldl is tail recursive, while foldr isn’t)
+\begin{lstlisting}
+    (define (fold-left f i L)
+        (if (null ? L)
+            i
+            (fold-left f
+                      (f (car L) i)
+                      (cdr L))))
+    (define (fold-right f i L)
+        (if (null ? L)
+            i
+            (f (car L)
+                (fold-right f i (cdr L)))))
+\end{lstlisting}
+An implementation of tail-recursive foldr (not gain much)
+\begin{lstlisting}
+    (define (fold-right-tail f i L)
+        (define (fold-right-tail-h f i L out)
+            (if (null ? L)
+                (out i)
+                (fold-right-tail-h f i
+                            (cdr L)
+                            (lambda (x)
+                                (out (f (car L) x))))))
+    (fold-right-tail-h f i L (lambda (x) x)))
+\end{lstlisting}
 \subsection{Meta-programming through Macros}
-\todo[inline]{Example while and let}
-
+While loops, we cannot define it as a procedure
+But we can usa a macro:
+\begin{lstlisting}
+    (define-syntax while
+        (syntax-rules () ; no other needed keywords
+            ((_ condition body ...) ; pattern P
+                (let loop ()        ; expansion of P
+                    (when condition
+                        (begin
+                            body ...
+                            (loop)))))))
+\end{lstlisting}
+\texttt{let*} as a macro:
+\begin{lstlisting}
+    (define-syntax my-let*
+        (syntax-rules () ; base (= only one variable )
+            ((_ ((var val)) istr ...)
+                ((lambda (var) istr ...) val))
+            ;; more than one
+            ((_ ((var val) . rest) istr ...)
+                ((lambda (var)
+                    (my-let * rest istr ...))
+                    val))))
+\end{lstlisting}
+And \texttt{let} as a macro:
+\begin{lstlisting}
+    (define-syntax my-let
+        (syntax-rules ()
+            ((_ ((var expr) ...) body ...)
+                ((lambda (var ...) body ...) expr ...))))
+\end{lstlisting}
 \subsection{Hygiene}
 \begin{itemize}
     \item Scheme macros are hygienic
@@ -446,11 +530,141 @@ The main difference is in methods vs procedures:
 
     
 \subsection{Continuation}
-\todo[inline]{Continuation}
+\begin{itemize}
+    \item A continuation is an abstract representation of the control state of a program
+    \item in practice, it is a data structure used to represent the state of a running program
+    \item the \textbf{current continuation} is the continuation that, from the perspective of running code, would be derived from the current point in a program execution
+    \item if the language supports first class functions, it is always possible to refactor code in continuation passing style, where control is passed explicitly in the form of a continuation
+    \item (hint: we saw an example with the tail-recursive fold-right)
+\end{itemize}
 
+\begin{itemize}
+    \item Scheme, unlike many mainstream languages, natively supports continuations:
+    \item call-with-current-continuation (or call/cc) accepts a procedure with one argument, to which it passes the current continuation, implemented as a closure
+    \item The argument of call/cc is also called an escape procedure;
+    \item the escape procedure can then be called with an argument that becomes the result of call/cc
+    \item This means that the escape procedure abandons its own continuation, and reinstates the continuation of call/cc (see next example)
+    \item In practice: we save/restore the call stack
+\end{itemize}
+Example:
+\begin{lstlisting}
+    (+ 3
+        (call/cc
+            (lambda (exit)
+                (for-each (lambda (x)
+                            (when (negative? x)
+                                (exit x)))
+                        '(54 0 37 -3 245 19))
+            10)))
+    ; => 0
+\end{lstlisting}
+An escape procedure has unlimited extent: if stored, it can be called after the continuation has been invoked, also multiple times
+\begin{lstlisting}
+    (define saved-cont #f) ; place to save k
+    (define (test-cont)
+        (let (x 0))
+            (call/cc
+                (lambda (k)     ; k contains the continuation
+                    (set! saved-cont k))) ; here is saved
+
+            ;; this is the continuation        
+            (set! x (+ x 1))
+            (display x)
+            (newline)))
+
+    ;; USAGE
+    (test-cont) ;; = > 1
+    (saved-cont) ;; = > 2
+    (define other-cont saved-cont)
+    (test-cont) ;; = > 1 (here we reset saved-cont)
+    (other-cont) ;; = > 3 (other is still going ...)
+    (saved-cont) ;; = > 2
+
+\end{lstlisting}
+Another example: a for with break
+\begin{lstlisting}
+    (define-syntax For
+        (syntax-rules (from to break : do)
+        ((_ var from min to max break : br-sym do body ...)
+            (let * ((min1 min)
+                    (max1 max)
+                    (inc (if (< min1 max1) + -)))
+                (call / cc (lambda (br-sym)
+                    (let loop ((var min1))
+                        body ...
+                        (unless (= var max1)
+                            (loop (inc var 1))))))))))
+
+; Usage
+    (For i from 1 to 10 break : get-out
+        do (displayln i)
+            (when (= i 5)
+                (get-out)))
+
+\end{lstlisting}
 
 \subsection{Exceptions}
-\todo[inline]{Exceptions}
+First we need a stack for installed handlers:
+\begin{lstlisting}
+    (define *handlers* (list))
+
+    (define (push-handler proc)
+        (set! *handlers* (cons proc *handlers*)))
+    
+    (define (pop-handler)
+        (let ((h (car *handlers*)))
+            (set! *handlers* (cdr *handlers*))
+            h))
+\end{lstlisting}
+throw: if there is a handler, we pop and call it; otherwise we raise an error
+\begin{lstlisting}
+    (define (throw x)
+        (if (pair ? *handlers*)
+            ((pop-handler) x)
+            (apply error x)))
+\end{lstlisting}
+Exceptions: Try-Catch
+\begin{lstlisting}
+    (define-syntax try
+        (syntax-rules (catch)
+            ((_ exp1 ...
+                (catch what hand ...))
+            (call / cc (lambda (exit)
+                ; install the handler
+                (push-handler (lambda (x)
+                                (if (equal ? x what)
+                                  (exit
+                                    (begin hand ...))
+                                  (throw x))))
+                (let ((res ;; evaluate the body
+                        (begin exp1 ...)))
+                    ; ok: discard the handler
+                    (pop-handler)
+                    res))))))
+\end{lstlisting}
+An example with throw/catch
+\begin{lstlisting}
+    (define (foo x)
+        (display x) (newline)
+        (throw "hello"))
+
+    (try
+        (display "Before foo")
+        (newline)
+        (foo "hi!")
+        (display "After foo") ; unreached code
+        (catch "hello"
+            ; this is the handler block
+            (display "I caught a throw.") (newline)
+            # f))
+\end{lstlisting}
+
+
+
+
+
+
+
 
 \subsection{Object Oriented programming}
 It is possible to use closures to do some basic OO programming
@@ -531,7 +745,7 @@ An object is implemented with a hash table
     (define new-object make-hash)
     (define clone hash-copy)
 \end{lstlisting}
-keys are attribute/method names. \
+keys are attribute/method names. \\
 Just for convenience:
 \begin{lstlisting}[language=Lisp]
     (define-syntax !!       ; setter
@@ -592,7 +806,6 @@ Now create object Pina as clone of Pino
                 (if (eq? slot 'unknown)
                     (dispatch (hash-ref object '<<parent>> 'unknown) msg)
                     slot))))
-
     ; Have to modify ?? and -> for dispatching
     (define-syntax ??       ; reader
         (syntax-rules ()

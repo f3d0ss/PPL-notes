@@ -1,0 +1,168 @@
+\subsection{2020-01-15}
+Consider the Foldable and Applicative type classes in Haskell. We want to implement something
+analogous in Scheme for vectors. Note: you can use the following library functions in your code: vectormap, vector-append.
+\begin{itemize}
+    \item Define vector-foldl and vector-foldr.
+    \item Define vector-pure and vector-$<*>$.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+    (define (vector-foldr f i v)
+        (let loop ((cur (- (vector-length v) 1))
+                    (out i))
+            (if (< cur 0)
+                out
+                (loop (- cur 1) (f (vector-ref v cur) out)))))
+    (define (vector-foldl f i v)
+        (let loop ((cur 0)
+                    (out i))
+            (if (>= cur (vector-length v))
+                out
+                (loop (+ cur 1) (f (vector-ref v cur) out)))))
+    (define (vector-concat-map f v)
+        (vector-foldr vector-append #() (vector-map f v)))
+    (define vector-pure vector)
+    (define (vector-<*> fs xs)
+        (vector-concat-map (lambda (f) (vector-map f xs)) fs))
+\end{lstlisting}
+
+
+
+
+
+
+
+
+\subsection{2019-09-03}
+Consider the following code:
+\begin{lstlisting}
+    (define (a-function lst sep)
+        (foldl (lambda (el next)
+                (if (eq? el sep)
+                    (cons '() next)
+                    (cons (cons el (car next))
+                        (cdr next))))
+            (list '()) lst))
+\end{lstlisting}
+\begin{itemize}
+    \item 1) Describe what this function does; what is the result of the following call? \\
+            \texttt{(a-function '(1 2 nop 3 4 nop 5 6 7 nop nop 9 9 9) 'nop)}
+    \item 2) Modify a-function so that in the example call the symbols nop are not discarded from the resulting list,
+    which must also be reversed (of course, without using reverse).
+\end{itemize}
+Solution:
+\begin{lstlisting}
+    a-function returns a list of lists, where each list is taken backwards, and sep is used for a separator. The resulting list is: ((9 9 9) () (7 6 5) (4 3) (2 1))
+    The modified function is:
+    (define (another-function lst sep)
+        (foldr (lambda (el next)
+                (if (eq? el sep)
+                    (cons (list el) next)
+                    (cons (cons el (car next))
+                        (cdr next))))
+            (list '()) lst))
+\end{lstlisting}
+
+
+
+
+\subsection{2019-07-24}
+Write a functional, tail recursive implementation of a procedure that takes a list of numbers L and two values
+x and y, and returns three lists: one containing all the elements that are less than both x and y, the second one
+containing all the elements in the range [x,y], the third one with all the elements bigger than both x and y. It
+is not possible to use the named let construct in the implementation. \\
+Solution:
+\begin{lstlisting}
+    (define (3-part L v1 v2)
+        (define (3-p L v1 v2 r1 r2 r3)
+            (if (null? L)
+                (list r1 r2 r3)
+                (let    ((x (car L))
+                        (xs (cdr L)))
+                    (cond
+                        ((and (< x v1)(< x v2))
+                            (3-p xs v1 v2 (cons x r1) r2 r3))
+                        ((and (>= x v1)(<= x v2))
+                            (3-p xs v1 v2 r1 (cons x r2) r3))
+                        ((and (> x v1)(> x v2))
+                            (3-p xs v1 v2 r1 r2 (cons x r3)))))))
+        (3-p L v1 v2 '() '() '()))
+\end{lstlisting}
+
+
+
+
+
+\subsection{2019-06-28}
+Consider this data definition in Haskell: data Tree a = Leaf a | Branch (Tree a) a (Tree a) \\
+Define an OO analogous of this data structure in Scheme using the technique of "closure as classes" as seen in class, defining the map and print methods, so that: \\
+\texttt{(define t1 (Branch (Branch (Leaf 1) -1 (Leaf 2)) -2 (Leaf 3)))} \\
+\texttt{((t1 'map (lambda (x) (+ x 1))) 'print)} \\
+should display: \texttt{(Branch (Branch (Leaf 2) 0 (Leaf 3)) -1 (Leaf 4))} \\
+Solution:
+\begin{lstlisting}
+    (define (Branch t1 x t2)
+        (define (print)
+            (display "(Branch ")
+            (t1 'print)
+            (display " ")
+            (display x)
+            (display " ")
+            (t2 'print)
+            (display ")"))
+        (define (map f)
+            (Branch (t1 'map f) (f x) (t2 'map f)))
+        (lambda (message . args)
+            (apply
+                (case message
+                    ((print) print)
+                    ((map) map)
+                    (else (error "Unknown")))
+                args)))
+
+    (define (Leaf x)
+        (define (print)
+            (display "(Leaf ")
+            (display x)
+            (display ")"))
+        (define (map f)
+            (Leaf (f x)))
+        (lambda (message . args)
+            (apply
+                (case message
+                    ((print) print)
+                    ((map) map)
+                    (else (error "Unknown")))
+                args)))
+\end{lstlisting}
+
+\subsection{2019-02-08}
+Define a \underline{pure} function \texttt{multi-merge} with a variable number of arguments (all of them must be ordered lists of
+numbers), that returns an ordered list of all the elements passed. \underline{It is forbidden to use external sort functions.} \\
+E.g. when called like: \\
+\texttt{(multi-merge '(1 2 3 4 8) '(-1 5 6 7) '(0 3 8) '(9 10 12))} \\
+it returns: \texttt{'(-1 0 1 2 3 3 4 5 6 7 8 8 9 10 12)} \\
+Solution:
+\begin{lstlisting}
+    (define (merge a1 a2)
+        (cond ((null? a1) a2)
+            ((null? a2) a1)
+            (else   (let ((x (car a1))
+                          (y (car a2)))
+                        (if (< x y)
+                            (cons x (merge (cdr a1) a2))
+                            (cons y (merge a1 (cdr a2))))))))
+    (define (multi-merge . data)
+        (foldl merge '() data))
+\end{lstlisting}
+
+\subsection{2019-01-16}
+Define a pure function f with a variable number of arguments, that, when called like \texttt{(f x1 x2 .. xn)}, returns:
+\texttt{(xn (xn-1 ( .. (x1 (xn xn-1 .. x1))..)}. Function \texttt{f} must be defined using only fold operations for loops.
+\begin{lstlisting}
+    (define (f . L)
+        (foldl  (lambda (x y)
+                    (list x y))
+                (foldl cons '() L)
+                L))
+\end{lstlisting}
