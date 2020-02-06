@@ -196,3 +196,29 @@ trees, like in the next figure.
         pure x = (Cons x Nil)
         x <*> y = ltconcmap (\f -> fmap f y) x
 \end{lstlisting}
+
+
+\subsection{2018-07-06}
+Consider this datatype: \texttt{data Blob a = Blob a (a -> a)} \\
+Note: in this exercise, do not consider the practical meaning of Blob; the only constraint is to use all the available data, and the
+types must be right! \\
+E.g. \\
+\texttt{instance Show a => Show (Blob a) where} \\
+ \texttt{show (Blob x f) = "Blob " ++ (show (f x))}
+\begin{itemize}
+    \item 1) Can Blob automatically derive Eq? Explain how, why, and, if the answer is negative, make it an instance of Eq.
+    \item 2) Make Blob an instance of the following classes: Functor, Foldable, and Applicative.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+    instance Eq a => Eq (Blob a) where
+        (Blob x f) == (Blob y g) = (f x) == (g y)
+    instance Functor Blob where
+        fmap f (Blob x g) = Blob (f (g x)) id
+
+    instance Foldable Blob where
+        foldr f z (Blob x g) = f (g x) z
+    instance Applicative Blob where
+        pure x = Blob x id
+        (Blob fx fg) <*> (Blob x g) = Blob (((fg fx) . g) x) id
+\end{lstlisting}

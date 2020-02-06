@@ -1,5 +1,5 @@
 \subsection{2020-01-15}
-We want to implement something like Python’s \texttt{range} in Erlang, using processes. \\
+We want to implement something like Python's \texttt{range} in Erlang, using processes. \\
 E.g. 
 \begin{lstlisting}
     R = range(1,5,1)    % starting value, end value, step
@@ -105,7 +105,7 @@ Note: for simplicity, you can use the library function spawn\_link/1, which take
 
 \subsection{2019-06-28}
 Being bu and the two cf spawn-linked, we need to terminate the main process with exit to kill them. If we do not do
-so, we get an unending sequence of “no data”. Hence, we could change “{P1, done} -> ok” into {P1, done} -> exit(done)”.
+so, we get an unending sequence of "no data". Hence, we could change "{P1, done} -$>$ ok" into "{P1, done} -$>$ exit(done)".
 The output of the system is correct, because it is possible that some elements remain in the buffer, being the buffer managed as a
 stack.
 
@@ -130,4 +130,63 @@ For security reasons, the process must only work with messages coming from its c
             ok;
         _ -> cam(Beh, Who)
     end.
+\end{lstlisting}
+
+\subsection{2018-09-05}
+Define a function create\_pipe, which takes a list of names and creates a process of each element of the list,
+each process registered as its name in the list; e.g. with [one, two], it creates two processes called 'one' and
+'two'. The processes are "connected" (like in a list, there is the concept of "next process") from the last to the first,
+e.g. with [one, two, three], the process structure is the following: \\
+\texttt{three -> two -> one -> self}, \\
+this means that the next process of 'three' is 'two', and so on; self is the process that called create\_pipe.\\
+Each process is a simple repeater, showing on the screen its name and the received message, then sends it to
+the next process.\\
+Each process ends after receiving the 'kill' message, unregistering itself.\\
+Solution:
+\begin{lstlisting}
+    repeater(Next, Name) ->
+        receive
+            kill ->
+                unregister(Name),
+                Next ! kill;
+            V ->
+                io:format("~p got ~p~n", [Name, V]),
+                Next ! V,
+                repeater(Next, Name)
+        end.
+
+    create_pipe([], End) -> End;
+    create_pipe([X|Xs], Next) ->
+        P = spawn(?MODULE, repeater, [Next, X]),
+        register(X, P),
+        create_pipe(Xs, X).
+\end{lstlisting}
+
+\subsection{2018-02-05}
+The fixed-point of a function f and a starting value x is the value $v = f^{k}(x)$, with $k > 0$, such that $f^{k}(x) = f^{k+1}(x)$. We want to implement a fixed-point code using two communicating actors:
+\begin{itemize}
+    \item 1) Define the function for an \texttt{applier} actor, which has a state S, holding a value, and receives a function f from other actors: if S = f(S), it sends back the result S and ends it computation; otherwise sends back a message to state that the condition S = f(S) has not been reached.
+    \item 2) Define a function called fix, which takes as input a function and a starting value, and creates and uses an applier actor to implement the fixed-point.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+    applier(State) ->
+        receive
+            {Sender, F} -> NewState = F(State),
+                if
+                    NewState =:= State -> Sender!{self(), State};
+                    true -> Sender!{self(), no}, applier(NewState)
+                end
+        end.
+        loop(P, F) ->
+            P!{self(), F},
+            receive
+                {P, V} -> if
+                    V =:= no -> loop(P, F);
+                    true -> V
+                end
+            end.
+        fix(F, V) ->
+        A = spawn(?MODULE, applier, [V]),
+        loop(A, F).
 \end{lstlisting}
