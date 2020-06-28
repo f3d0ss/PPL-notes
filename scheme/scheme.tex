@@ -38,7 +38,7 @@ Syntax form to prevent evaluation
     ;equivalent to
     '<expr>
 \end{lstlisting}
-<expr> is left unevaluated
+$<$expr$>$ is left unevaluated
 \begin{lstlisting}[language=Lisp]
     (quote (1 2 3)) ;is a list
     (quote (+ 1 2)) ;is another list
@@ -86,7 +86,7 @@ Short notation to define procedures:
     (cube 3) ; = 27
 \end{lstlisting}
 
-\subsection{Assignment}:
+\subsection{Assignment}
 Use \textbf{set!} for assignement:
 \begin{lstlisting}[language=Lisp]
     (begin
@@ -347,13 +347,7 @@ Evaluation strategy: call by object sharing (like in Java): objects are allocate
 \end{lstlisting}
 
 \subsection{Struct}
-It is possible to define new types, through
-
-
-
-
-
-texttt{struct}.
+It is possible to define new types, through \textbf{struct}.
 The main idea is like struct in C, with some differences.
 \begin{lstlisting}[language=Lisp]
     (struct being (
