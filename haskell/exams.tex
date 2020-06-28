@@ -1,3 +1,38 @@
+\subsection{2020-02-07}
+Consider a data type PriceList that represents a list of items, where each item is associated with a price,
+of type Float:
+data PriceList a = PriceList [(a, Float)]
+\begin{itemize}
+	\item Make PriceList an instance of Functor and Foldable.
+	\item Make PriceList an instance of Applicative, with the constraint that each application of a function in the left hand side of a <*> must increment a right hand side value’s price by the price associated with the function.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+	pmap :: (a -> b) -> Float -> PriceList a -> PriceList b
+	pmap f v (PriceList prices) = PriceList $ fmap (\x -> let (a, p) = x
+					in (f a, p+v)) prices
+	
+	instance Functor PriceList where
+		fmap f prices = pmap f 0.0 prices
+	
+	instance Foldable PriceList where
+		foldr f i (PriceList prices) = foldr (\x y -> let (a, p) = x
+						in f a y) i prices
+	
+	(PriceList x) +.+ (PriceList y) = PriceList $ x ++ y
+	
+	plconcat x = foldr (+.+) (PriceList []) x
+	
+	instance Applicative PriceList where
+		pure x = PriceList [(x, 0.0)]
+		(PriceList fs) <*> xs = plconcat (fmap (\ff -> let (f, v) = ff
+						in pmap f v xs) fs)
+\end{lstlisting}
+
+
+
+
+
 \subsection{2020-01-15}
 The following data structure represents a cash register. As it should be clear from the two accessor
 functions, the first component represents the current item, while the second component is used to store

@@ -1,3 +1,30 @@
+\subsection{2020-02-07}
+Implement this new construct: (each-until var in list until pred : body), where keywords are written in
+boldface. It works like a for-each with variable var, but it can end before finishing all the elements of list
+when the predicate pred on var becomes true.\\
+Solution:
+\begin{lstlisting}
+	(define-syntax each-until
+		(syntax-rules (in until :)
+			((_ x in L until pred : body ...)
+				(call/cc
+					(lambda (exit)
+						(let ((pred-fun (lambda (x) pred)))
+							(let loop ((xs L))
+								(if (null? xs)
+									(exit)
+									(let ((x (car xs)))
+										(if (pred-fun x)
+											(exit)
+											(begin
+												body ...
+												(loop (cdr xs)))))))))))))
+\end{lstlisting}
+
+
+
+
+
 \subsection{2020-01-15}
 Consider the Foldable and Applicative type classes in Haskell. We want to implement something
 analogous in Scheme for vectors. Note: you can use the following library functions in your code: vectormap, vector-append.
@@ -25,7 +52,6 @@ Solution:
     (define (vector-<*> fs xs)
         (vector-concat-map (lambda (f) (vector-map f xs)) fs))
 \end{lstlisting}
-
 
 
 
