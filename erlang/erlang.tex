@@ -1,0 +1,172 @@
+\subsection{Variables, Atoms, Tuples, Lists}
+\textbf{Variables} start with an Upper Case Letter (like in Prolog).
+Variables can only be bound once, the value of a variable can never be changed once it has been set.\\
+\textbf{Atoms} are like symbols in Scheme.
+Any character code is allowed within an atom, singly quoted sequences of characters are atoms (not strings).
+unquoted must be lowercase, to avoid clashes with variables.\\
+\textbf{Tuples} are used to store a fixed number of items.\\
+Are like in Haskell, e.g. [1, 2, 3], ++ concatenates.
+Main difference: [X | L] is cons (like (cons X L)).
+Strings are lists, like in Haskell.
+\begin{lstlisting}
+	ACamelCaseVariableName % Variable (unmutable)
+	start_with_a_lower_case_letter % Atom (symbol)
+	{person, 'Jim', 'Austrian'} % Tuple: three atoms
+\end{lstlisting}
+
+\subsection{Pattern Matching}
+Like in Prolog, = is for pattern matching; \_ is “don’t care”.
+\begin{lstlisting}
+	A = 10 % Succeeds, binds A to 10
+	{A, A, B} = {abc, abc, foo} % Succeeds - binds A to abc, B to foo
+	{A, A, B} = {abc, def, 123} % Fails
+	[A,B|C] = [1,2,3,4,5,6,7] % Succeeds - binds A = 1, B = 2, C = [3,4,5,6,7]
+	[H|T] = [abc] % Succeeds - binds H = abc, T = []
+	{A,_, [B|_], {B}} = {abc, 23, [22, x], {22}} % 	Succeeds - binds A = abc, B = 22
+\end{lstlisting}
+
+\subsection{Maps}
+\begin{lstlisting}
+	Map = #{one => 1, "Two" => 2, 3 => three}. % Create
+	Map#{one := "I"}. % Update/insert
+	#{"Two" := V} = Map. % Search and assign
+\end{lstlisting}
+
+\subsection{Functions and Modules}
+Function and \textbf{Module} names (func and module in the above) must be atoms.
+Functions are defined within Modules.
+Functions must be exported before they can be called from outside the module where they are defined.
+\begin{lstlisting}
+	-module(demo).
+	-export([double/1]).
+	double(X) -> times(X, 2). % Exported
+	times(X, N) -> X * N. % Not exported
+\end{lstlisting}
+Built-in functions in the erlang module:
+\begin{lstlisting}
+	date()
+	time()
+	length([1,2,3,4,5])
+	size({a,b,c})
+	atom_to_list(an_atom) % "an_atom"
+	list_to_tuple([1,2,3,4]) % {1,2,3,4}
+	integer_to_list(2234) % "2234"
+	tuple_to_list({1,2,3,4}) % [1,2,3,4]
+\end{lstlisting}
+A \textbf{Function} is defined as a sequence of clauses (separated by ";").
+\textbf{Clauses} are scanned sequentially until a match is found.
+When a match is found all variables occurring in the head become bound.
+Variables are local to each clause, and are allocated and deallocated automatically.
+The body is evaluated sequentially (use "," as separator).
+The keyword \texttt{when} introduces a guard, like "$\mid$" in Haskell.
+All variables in a guard must be bound.
+\begin{lstlisting}
+	factorial(0) -> 1;
+	factorial(N) when N > 0 ->
+		N * factorial(N - 1).
+\end{lstlisting}
+
+\subsection{Apply}
+\begin{lstlisting}
+	apply(Mod, Func, Args)
+\end{lstlisting}
+Apply function Func in module Mod to the arguments in the list Args.
+Mod and Func must be atoms (or expressions which evaluate to atoms).
+Any Erlang expression can be used in the arguments to apply.
+\texttt{?MODULE} uses the preprocessor to get the current module’s name.
+
+\subsection{Case and If}
+Note that if needs guards, so for user defined predicates it is customary to use case.
+\begin{lstlisting}
+	case lists:member(a, X) of
+		true -> ... ;
+		false -> ...
+	end,
+	%%%%%
+	if
+		integer(X) -> ... ;
+		tuple(X) -> ... ;
+		true -> ... % works as an "else"
+	end,
+\end{lstlisting}
+
+\subsection{Lambdas}
+\begin{lstlisting}
+	Square = fun (X) -> X*X end. % Declaration
+	Square(3). % Usage
+	lists:map(Square, [1,2,3]). returns [1,4,9] % Lambdas can be passed as usual to higher order functions:
+	lists:foldr(fun my_function/2, 0, [1,2,3]). % To pass standard functions, we need to prefix their name	with fun and state its arity:
+\end{lstlisting}
+
+\subsection{Concurrent Programming: the Actor Model}
+Everything is an \textbf{Actor}: an independent unit of computation.
+Actors are inherently concurrent.
+Actors can only communicate through messages (async communication).
+Actors can be created dynamically.
+No requirement on the order of received messages.\\
+There are three main primitives:
+\begin{itemize}
+	\item \texttt{spawn} creates a new process executing the specified function, returning an identifier.
+	\item \texttt{send} (written \texttt{!}) sends a message to a process through its identifier; the content of the message is simply a variable. The operation is asynchronous.
+	\item \texttt{receive} end extract, going from the first, a message from a process’s mailbox queue matching with the provided set of patterns, this is blocking if no message is in the mailbox. The mailbox is persistent until the process quits.
+\end{itemize}
+
+\subsection{Creating a new process}
+We have a process with \texttt{Pid1} (\textbf{Process Identity} or Pid).
+In it we perform \texttt{Pid2 = spawn(Mod, Func, Args)}.
+Like apply but spawning a new process.
+After, \texttt{Pid2} is the process identifier of the new process, this is known only to process \texttt{Pid1}.
+
+\subsection{Message Passing}
+\begin{lstlisting}
+	PidB ! {self(), {mymessage, [1,2,3]}} % Process A sends a message to B
+	receive
+		{From, {Msg, Data}} ->
+			work_on_data(Data);
+	end
+\end{lstlisting}
+\texttt{self()} returns the Pid of the process executing it.
+\texttt{From}, \texttt{Msg} and \texttt{Data} become bound when the message is received.
+Messages can carry data and be selectively unpacked.
+If \texttt{From} is bound before receiving a message, then only data from that process is accepted.\\
+Client-Server can be easily realized through a simple protocol, where requests have the syntax \texttt{\{request, ...\}}, while replies are written as \texttt{\{reply, ...\}}
+
+\subsection{Registered Processes}
+\texttt{register(Alias, Pid)} registers the process Pid with name Alias.
+Any process can send a message to a registered process.
+\begin{lstlisting}
+	start() ->
+		Pid = spawn(?MODULE, server, [])
+		register(analyzer, Pid).
+	analyze(Seq) ->
+		analyzer ! {self(), {analyze, Seq}},
+		receive
+			{analysis_result, R} -> R
+		end.
+\end{lstlisting}
+
+\subsection{Timeouts}
+\begin{lstlisting}
+	% If the message foo is received within the time Time perform Actions1 otherwise perform Actions2.
+	wait(Time, message) ->
+		receive
+			foo -> Actions1;
+		after
+			Time -> Actions2;
+	sleep(T) -> % process suspends for T ms.
+		receive
+		after
+			T -> true
+		end.
+	suspend() -> % process suspends indefinitely.
+		receive
+		after
+			infinity -> true
+		end.
+	flush() -> % flushes the message buffer.
+		receive
+			Any -> flush()
+		after
+			0 -> true
+		end.
+\end{lstlisting}
