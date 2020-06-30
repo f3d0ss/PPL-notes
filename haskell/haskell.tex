@@ -1,0 +1,480 @@
+\subsection{Evaluation of Functions}
+In mathematics, functions do not have side-effects.
+This is clearly not true in conventional programming languages, Scheme included.
+Haskell is a \textbf{purely functional programming language}.
+We have already seen that, in absence of side effects (purely functional computations) from the point of view of the result the order in which functions are applied does not matter (almost).
+A function application ready to be performed is called a reducible expression (or redex).\\
+\textbf{Prelude} is the standard library for Haskell.
+\subsection{Evaluation strategies}
+\begin{itemize}
+	\item \textbf{Call-by-Value}: in this strategy, arguments of functions are always evaluated before evaluating the function itself, this corresponds to passing arguments by value (innermost strategy).
+	\item \textbf{Call-by-Name}: functions are always applied before their arguments, this corresponds to passing arguments by name (outermost fashion).
+	If the argument is not used, it is never evaluated; if the argument is used several times, it is re-evaluated each time.
+	\item \textbf{Call-by-Need}: is a memoized version of call-by-name where, if the function argument is evaluated, that value is stored for subsequent uses (lazy evaluation).
+	This is what Haskell uses.
+\end{itemize}
+In Scheme \texttt{delay} is used to return a promise to execute a computation (implements call-by-name).
+Moreover, it caches the result (memoization) of the computation on its first evaluation and returns that value on subsequent calls (implements call-by-need).
+Then \texttt{force} is used to force the evaluation of a promise.
+
+\subsection{Currying}
+In Haskell, functions have only one argument.
+This is not a limitation, because functions with more arguments are automatically \textbf{curried} and consequently managed.
+
+\subsection{Types and Functions}
+\textbf{Static Typing}: the type of everything must be known at compile time.
+There is type inference, so usually we do not need to explicitly declare types.
+"Has type" is written \texttt{::} instead of \texttt{:} (the latter is cons).
+Functions are declared through a sequence of equations and they use pattern matching, which means that arguments are matched with the right parts of equations, top to bottom, and if the match succeeds, the function body is called.\\
+\textbf{Parametric Polymorphism}: lower case letters are type variables, so [a] stands for a list of elements of type a, for any a.
+Every well-typed expression is guaranteed to have a unique principal type, and the principal type can be inferred automatically.\\
+\texttt{(.)} is used for composing functions, e.g. \texttt{(f.g)(x)} is \texttt{f(g(x))}.\\
+\texttt{\$} can be used for avoiding parentheses, e.g. \texttt{(10*) (5+3) = (10*) \$ 5+3}.
+
+\subsection{User-Defined Types}
+Data and type constructors live in separate name-spaces, so it is possible (and common) to use the same name for both.
+If we apply a data constructor we obtain a value (e.g. Pnt 2.3 5.7), while with a type constructor we obtain a type (e.g. Pnt Bool)
+\begin{lstlisting}
+	--User-defined types
+	data Bool = False | True -- a "sum" type (union in C)
+	data Point a = Point a a -- a "product" type (struct in C)
+\end{lstlisting}
+
+\subsection{Recursive Types}
+\begin{lstlisting}
+	-- Trees
+	data Tree a = Leaf a | Branch (Tree a) (Tree a)
+	Branch :: Tree a -> Tree a -> Tree a
+	aTree = Branch (Leaf 'a') (Branch (Leaf 'b') (Leaf 'c'))
+	-- Lists
+	data List a = Null | Cons a ( List a)
+	data [a] = [] | a : [a]
+\end{lstlisting}
+Haskell has special syntax for lists: \texttt{[]} is a data and type constructor, while \texttt{:} is an infix data constructor.
+\texttt{(++)} denotes list concatenation.\\
+In product types, the access is positional, for instance we may define accessors using \texttt{\_} as a blank and there is also a C-like syntax to have named fields.
+This declaration automatically defines two field names \texttt{pointx}, \texttt{pointy} and their corresponding selector functions:
+\begin{lstlisting}
+	pointx Point x _ = x
+	pointy Point _ y = y
+	-- OR
+	data Point = Point {pointx, pointy :: Float}
+\end{lstlisting}
+
+\subsection{Type Synonyms}
+Type Synonyms are defined with the keyword \texttt{type}, used usually for readability and shortness.
+
+\subsection{Map}
+Haskell has map, and it can be defined as:
+\begin{lstlisting}
+	map f [] = []
+	map f (x:xs) = f x : map f xs
+\end{lstlisting}
+We can partially apply also infix operators, by using parentheses: \texttt{(+ 1)} or \texttt{(1 +)} or \texttt{(+)}
+
+\subsection{Infinite Computations}
+Call-by-need is very convenient for dealing with never-ending computations that provide data.
+Clearly, we cannot evaluate them, but there is take to get finite slices from them.
+\begin{lstlisting}
+	ones = 1 : ones
+	numsFrom n = n : numsFrom (n + 1)
+	allNums = [1..] -- Same as ()numsFrom 1)
+	squares = map (^2) (numsFrom 0)
+	zip :: [a] -> [b] -> [(a, b)]
+	zip [1, 2, 3] "ciao" ---> [(1, 'c'), (2, 'i'), (3, 'a')]
+	[(x,y) | x <- [1 ,2] , y <- "ab"] ---> [(1, 'a'), (1, 'b'), (2, 'a'), (2, 'b')]
+	fibonacci = 1 : 1 : [a + b | (a, b) <- zip fibonacci (tail fibonacci)]
+\end{lstlisting}
+
+\subsection{Error}
+\texttt{bottom} (aka $\bot$) is defined as \texttt{bot = bot}.
+All errors have value \texttt{bot}, a value shared by all types.
+\texttt{error :: String -> a} is strange because is polymorphic only in the output.
+The reason is that it returns \texttt{bot} (in practice, an exception is raised).
+
+\subsection{Pattern matching}
+The matching process proceeds top-down, left-to-right.
+Patterns may have boolean guards.
+\texttt{\_} stands for don't care.\\
+Definition of take:
+\begin{lstlisting}
+	take 0 _ = []
+	take _ [] = []
+	take n (x:xs) = x : take (n -1) xs
+\end{lstlisting}
+
+\texttt{let} is like Scheme's \texttt{letrec*}.
+The layout is like in Python, with meaningful whitespaces, but we can also use a C-like syntax.
+\texttt{where} can be convenient to scope binding over equations.
+\begin{lstlisting}
+	let x = 3
+		y = 12
+	in x+y ---> 15
+	let {x = 3; y = 12} in x+y ---> 15
+\end{lstlisting}
+
+\subsection{Strictness}
+There are various ways to enforce strictness in Haskell (analogously there are classical approaches to introduce laziness in strict languages).
+For example on data with \textbf{bang patterns} (a datum marked with \texttt{!} is considered strict).
+There are extensions for using \texttt{!} also in function parameters.
+Canonical operator to force evaluation is \texttt{seq :: a -> t -> t}.
+\texttt{seq x y} returns \texttt{y}, only if the evaluation of \texttt{x} terminates (i.e. it performs \texttt{x} then returns \texttt{y}).
+Strict versions of standard functions are usually primed.
+There is a convenient strict variant of \texttt{\$} (function application) called \texttt{\$!}.
+\begin{lstlisting}
+	data Complex = Complex !Float !Float -- Strict Float
+	($!) :: (a -> b) -> a -> b
+	f $! x = seq x (f x) -- Strict function application
+\end{lstlisting}
+
+\subsection{Modules and Abstract Data Types (ADT)}
+Haskell has a simple module system, with import, export and namespaces.
+Modules provide the only way to build abstract data types (ADT).
+The characteristic feature of an ADT is that the representation type is hidden: all operations on the ADT are done at an abstract level which does not depend on the representation.
+
+\subsection{Type classes and overloading}
+We already saw parametric polymorphism in Haskell (e.g. in length).
+Type classes are the mechanism provided by Haskell for ad hoc polymorphism (aka overloading).
+The first, natural example is that of numbers: 6 can represent an integer, a rational, a floating point number, etc...
+
+\subsection{Class Eq}
+Also numeric operators and equality work with different kinds of numbers.
+Let's start with equality: it is natural to define equality for many types.
+Type classes are used for overloading: a class is a "container" of overloaded operations.
+We can declare a type to be an instance of a type class, meaning that it implements its operations.
+Eq a is a constraint on type a, it means that a must be an instance of Eq.
+An implementation of \texttt{(==)} is called a \textbf{method}.
+Eq offers also a standard definition of \texttt{(/=)}, derived from\texttt{(==)}:
+We can also extend Eq with comparison operations.
+Ord is also called a subclass of Eq.
+It is possible to have multiple inheritance: \texttt{class (X a, Y a) => Z a}.
+\begin{lstlisting}
+	class Eq a where -- Class Eq
+		(==) :: a -> a -> Bool
+	(==) :: (Eq a) => a -> a -> Bool -- Type of (==)
+	class Eq a where -- Inequality
+		(==), (/=) :: a -> a -> Bool
+		x /= y = not (x == y)
+	class (Eq a) => Ord a where -- Class Ord, comparison operations
+		(<), (<=), (>=), (>) :: a -> a -> Bool
+		max, min :: a -> a -> a
+\end{lstlisting}
+
+\subsection{Class Show}
+It is used for showing: to have an instance we must implement \texttt{show}.
+Functions do not have a standard representation, but we can give them one.
+We can also represent binary trees:
+\begin{lstlisting}
+	instance Show a => Show (Tree a) where
+		show (Leaf a) = show a
+		show (Branch x y) = "<" ++ show x ++ " | " ++ show y ++ ">"
+\end{lstlisting}
+Usually it is not necessary to explicitly define instances of some classes, e.g. Eq and Show.
+Haskell can be quite smart and do it automatically, by using \textbf{deriving}.
+For example we may define binary trees using an infix syntax and automatic Eq, Show like this:
+\begin{lstlisting}
+	infixr 5 :^:
+	data Tr a = Lf a | Tr a :^: Tr a
+			deriving (Show, Eq)
+\end{lstlisting}
+An example with class Num, Rational Numbers:
+\begin{lstlisting}
+	data Rat = Rat !Integer !Integer deriving Eq
+	
+	simplify (Rat x y) = let g = gcd x y
+			in Rat (x 'div' g) (y 'div' g)
+			
+	makeRat x y = simplify (Rat x y)
+	
+	instance Num Rat where
+		(Rat x y) + (Rat x' y') = makeRat (x*y'+x'*y) (y*y')
+		(Rat x y) - (Rat x' y') = makeRat (x*y'-x'*y) (y*y')
+		(Rat x y) * (Rat x' y') = makeRat (x*x') (y*y')
+		abs (Rat x y) = makeRat (abs x) (abs y)
+		signum (Rat x y) = makeRat (signum x * signum y) 1
+		fromInteger x = makeRat x 1
+		
+	instance Ord Rat where
+		(Rat x y) <= (Rat x' y') = x*y' <= x'*y
+		
+	instance Show Rat where
+		show (Rat x y) = show x ++ "/" ++ show y
+\end{lstlisting}
+
+\subsection{Input/Output is dysfunctional}
+IO computation is based on state change (e.g. of a file), hence if we perform a sequence of operations, they must be performed in order (and this is not easy with call-by-need).
+For example \texttt{getChar} is not referentially transparent: two different calls of \texttt{getChar} could return different characters.\\
+\texttt{main} is the default entry point of the program (like in C).
+"\texttt{do}" is used to define an IO action as an ordered sequence of IO actions.
+"\texttt{<-}" is used to obtain a value from an IO action.
+\begin{lstlisting}
+	main = do {
+		putStr "Please, tell me something>";
+		thing <- getLine;
+		putStrLn $ "You told me \"" ++ thing ++ "\".";
+	}
+\end{lstlisting}
+Of course, purely functional Haskell code can raise exceptions.
+But if we want to catch them, we need an IO action: \texttt{handle :: Exception e => (e -> IO a) -> IO a -> IO a;}, where the 1st argument is the handler.
+IO is a type constructor, instance of \textbf{Monad}.
+
+\subsection{Other Classical Data Structures}
+Traditional data structures are imperative.
+If really needed, there are libraries with imperative implementations living in the IO monad.
+Idiomatic approach: use immutable arrays (\textbf{Data.Array}), and maps (\textbf{Data.Map}, implemented with balanced binary trees).
+\texttt{find} are respectively O(1) and O(log n); \texttt{update} O(n) for arrays, O(log n) for maps.
+Of course, the \texttt{update} operations copy the structure, it does not change it.
+
+\subsection{Class Foldable}
+\textbf{Foldable} is a class used for folding.
+The main idea is the one we know from \texttt{foldl} and \texttt{foldr} for lists: we have a container, a binary operation f , and we want to apply f to all the elements in the container, starting from a value z.
+A minimal implementation of Foldable requires \texttt{foldr}.
+\texttt{foldl} can be expressed in term of \texttt{foldr} (id is the identity function).
+The converse is not true, since \texttt{foldr} may work on infinite lists, unlike \texttt{foldl}:
+\begin{lstlisting}
+	foldr f z [] = z -- Definition
+	foldr f z (x:xs) = f x (foldr f z xs)
+	
+	foldl f z [] = z -- Definition
+	foldl f z (x:xs) = foldl f (f z x) xs
+	
+	foldl f a bs = foldr (\b g x -> g (f x b)) id bs a
+\end{lstlisting}
+Implementation of Foldabel for \textbf{Tree}:
+\begin{lstlisting}
+	tfoldr f z Empty = z
+	tfoldr f z (Leaf x) = f x z
+	tfoldr f z (Node l r) = tfoldr f (tfoldr f z r) l
+	
+	instance Foldable Tree where
+		foldr = tfoldr
+\end{lstlisting}
+\textbf{Maybe} is used to represent computations that may fail: we either have Just v, if we are lucky, or Nothing (Optional class in Java).
+It is basically a simple "conditional container".
+It is adopted in many recent languages, to avoid NULL and limit exceptions usage.
+\begin{lstlisting}
+	data Maybe a = Nothing | Just a
+	
+	instance Foldable Maybe where
+		foldr _ z Nothing = z
+		foldr f z (Just x) = f x z
+\end{lstlisting}
+
+\subsection{Class Functor}
+\textbf{Functor} is the class of all the types that offer a map operation.
+The map operation of functors is called \texttt{fmap}.
+It is quite natural to define map for a container, for example Maybe.
+\begin{lstlisting}
+	fmap :: (a -> b) -> f a -> f b
+	
+	instance Functor Maybe where
+		fmap _ Nothing = Nothing
+		fmap f (Just a) = Just (f a)
+\end{lstlisting}
+Well-defined functors should obey the following laws:
+\begin{itemize}
+	\item fmap id = id (where id is the identity function)
+	\item fmap (f . g) = fmap f . fmap g (homomorphism)
+\end{itemize}
+Implementation of Functor for \textbf{Tree}:
+\begin{lstlisting}
+	tmap f Empty = Empty
+	tmap f (Leaf x) = Leaf $ f x
+	tmap f (Node l r) = Node (tmap f l) (tmap f r)
+	
+	instance Functor Tree where
+		fmap = tmap
+\end{lstlisting}
+
+\subsection{Class Applicative}
+In our voyage toward monads, we must consider also an extended version of functors: \textbf{Applicative} functors.
+The definition of Applicative and the class Maybe implementing it is:
+\begin{lstlisting}
+	class (Functor f) => Applicative f where
+		pure :: a -> f a
+		(<*>) :: f (a -> b) -> f a -> f b
+	
+	instance Applicative Maybe where
+		pure = Just
+		Just f <*> m = fmap f m
+		Nothing <*> _ = Nothing
+\end{lstlisting}
+Note that \texttt{f} is a type constructor, and \texttt{f} a is a Functor type.
+Moreover, \texttt{f} must be parametric with one parameter.
+If f is a container, the idea is not too complex:
+pure takes a value and returns an f containing it;
+\texttt{<*>} is like fmap, but instead of taking a function, takes an f containing a function, to apply it to a suitable container of the same kind.\\
+Of course, \textbf{Lists} are instances of Foldable and Functor. What about Applicative?
+For that, it is first useful to introduce \texttt{concat}.
+So we start from a container of lists, and get a list with the concatenation of them trough \texttt{concat}.
+Its composition with map is called \texttt{concatMap}.
+With \texttt{concatMap}, we get the standard implementation of \texttt{<*>} for lists.
+Note that we map the operations in sequence, then we concatenate the resulting lists.
+\begin{lstlisting}
+	concat :: Foldable t => t [a] -> [a]
+	concat l = foldr (++) [] l
+	
+	concatMap f l = concat $ map f l
+	
+	instance Applicative [] where
+		pure x = [x]
+		fs <*> xs = concatMap (\f -> map f xs) fs
+\end{lstlisting}
+Following the list approach, we can make our binary trees an instance of Applicative Functors.
+First, we need to define what we mean by tree concatenation with \texttt{tconc}.
+Then, concat and concatMap (here \texttt{tconcmap} for short) are like those of lists.
+\begin{lstlisting}
+	tconc Empty t = t
+	tconc t Empty = t
+	tconc t1 t2 = Node t1 t2
+	
+	tconcat t = tfoldr tconc Empty t
+	
+	tconcmap f t = tconcat $ tmap f t
+	
+	instance Applicative Tree where
+		pure = Leaf
+		fs <*> xs = tconcmap (\f -> tmap f xs) fs
+\end{lstlisting}
+
+\subsection{Class Monad}
+A \textbf{Monad} is a kind of algebraic data.
+Type used to represent computations (instead of data in the domain model), we will often call these computations \textbf{actions}.
+Monads allow the programmer to chain actions together to build an ordered sequence, in which each action is decorated with additional processing rules provided by the monad and performed automatically.
+Monads are \textbf{flexible} and \textbf{abstract}.
+Monads can also be used to make imperative programming easier in a pure functional language.
+In practice, through them it is possible to define an imperative sub-language on top of a purely functional one.\\
+The Monad class definition:
+\begin{lstlisting}
+	class Applicative m => Monad m where
+		-- Sequentially compose two actions, passing any value produced
+		-- by the first as an argument to the second.
+		(>>=) :: m a -> (a -> m b) -> m b
+		-- Sequentially compose two actions, discarding any value produced
+		-- by the first, like sequencing operators (such as the semicolon)
+		-- in imperative languages.
+		(>>) :: m a -> m b -> m b
+		m >> k = m >>= \_ -> k
+		-- Inject a value into the monadic type.
+		return :: a -> m a
+		return = pure
+		-- Fail with a message.
+		fail :: String -> m a
+		fail s = error s
+\end{lstlisting}
+Note that only \texttt{>>=} is required, all the other methods have standard definitions.
+\texttt{>>=} and \texttt{>>} are called \textbf{bind}.
+\texttt{m} a is a computation (or action) resulting in a value of type \texttt{a}.
+\texttt{return} is by default pure, so it is used to create a single monadic action.
+Bind operators are used to compose actions:
+\texttt{x >>= y} performs the computation \texttt{x}, takes the resulting value and passes it to \texttt{y}, then performs \texttt{y};
+\texttt{x >> y} is analogous, but "throws away" the value obtained by \texttt{x}.\\
+Maybe is a Monad: the information managed automatically by the monad is the “bit” which encodes the success (i.e. Just) or failure (i.e. Nothing) of the action sequence.
+\begin{lstlisting}
+	instance Monad Maybe where
+		(Just x) >>= k = k x
+		Nothing >>= _ = Nothing
+		fail _ = Nothing
+\end{lstlisting}
+for a monad to behave correctly, method definitions must obey the following laws:
+\begin{itemize}
+	\item return is the identity element: \texttt{(return x) >>= f <=> f x} and \texttt{m >>= return <=> m}.
+	\item associativity for binds: \texttt{(m >>= f) >>= g <=> m >>= (\textbackslash x -> (f x >>= g))}.
+\end{itemize}
+The \textbf{do} syntax is used to avoid the explicit use of \texttt{>>=} and \texttt{>>}.
+The essential translation of do is captured by the following two rules: \texttt{do e1 ; e2 <=> e1 >> e2} and \texttt{do p <- e1 ; e2 <=> e1 >>= \textbackslash p -> e2}.
+IO is a build-in monad in Haskell: indeed, we used the do notation for performing IO.\\
+The List Monad:
+In lists, monadic binding involves joining together a set of calculations for each value in the list.
+In practice, bind is concatMap.
+The underlying idea is to represent non-deterministic computations.
+List comprehensions can be expressed in do notation.
+\begin{lstlisting}
+	instance Monad [] where
+		xs >>= f = concatMap f xs
+		fail _ = []
+\end{lstlisting}
+Monadic Trees:
+\begin{lstlisting}
+	instance Monad Tree where
+		xs >>= f = tconcmap f xs
+		fail _ = Empty
+\end{lstlisting}
+Monads are abstract, so monadic code is very flexible, because it can work with any instance of Monad.
+Monads can be used to implement parsers, continuations, and, of course, IO.
+
+\subsection{The State Monad}
+We saw that monads are useful to automatically manage state.
+We now define a general monad to do it.
+First of all, we define a type to represent our \textbf{State} class.
+The idea is having a type that represent a computation with a state.
+The “container” has now type constructor State st, because State has two parameters.
+We can then make State an istance of Functor, Applicative and Monad.
+\begin{lstlisting}
+	data State st a = State (st -> (st, a))
+	
+	instance Functor (State st) where
+		fmap f (State g) = State (\s -> let (s', x) = g s
+				in (s', f x))
+	
+	instance Applicative (State st) where
+		pure x = State (\t -> (t, x))
+		(State f) <*> (State g) =
+			State (\state -> let (s, f') = f state
+						(s', x) = g s
+					in (s', f' x))
+	
+	instance Monad (State state) where
+		State f >>= g = State (\olds ->
+				let (news, value) = f olds
+					State f' = g value
+				in f' news)
+\end{lstlisting}
+An important aspect of this monad is that monadic code does not get evaluated to data, but to a function.
+Note that State is a function and bind is function composition.
+In particular, we obtain a function of the initial state.
+To get a value out of it, we need to call it.
+\begin{lstlisting}
+	runStateM :: State state a -> state -> (state, a)
+	runStateM (State f) st = f st
+	
+	example = runStateM
+		(do x <- return 5
+			return (x+1))
+		333
+\end{lstlisting}
+Also after the example, it should be clear that, as it is, the state is not really used in a computation, it is only passed around unchanged.
+The point is to move the state to the data part and back, if we want to access and modify it in the program.
+3 this is easily done with the two utilities \texttt{getState = State (\textbackslash state -> (state, state))} and \texttt{putState new = State (\textbackslash \_ -> (new, ()))}.
+
+\subsection{State Applications: Trees and Logging}
+\textbf{Trees}:
+The idea is to visit a tree and to give a number (e.g. a unique identifier) to each leaf.
+It is of course possible to do it directly, but we need to define functions passing the current value of the current id value around, to be assigned and then incremented for the next leaf.
+But we can also see this id as a state, and obtain we a more elegant and general definition by using our State monad.
+First we need a monadic map for trees.
+\begin{lstlisting}
+	mapTreeM :: (a -> State state b) -> Tree a -> State state (Tree b)
+	mapTreeM f (Leaf a) = do
+		b <- f a
+		return (Leaf b)
+	mapTreeM f (Branch lhs rhs) = do
+		lhs' <- mapTreeM f lhs
+		rhs' <- mapTreeM f rhs
+		return (Branch lhs' rhs')
+	
+	numberTree tree = runStateM (mapTreeM number tree) 1
+		where number v = do cur <- getState
+				putState (cur+1)
+				return (v,cur)
+\end{lstlisting}
+\textbf{Logging}:
+In this case, instead of changing the tree, we want to implement a logger, that, while visiting the data structure, keeps track of the found data.
+This is quite easy, if we see the log text as the state of the computation.
+\begin{lstlisting}
+	logTree tree = runStateM (mapTreeM collectLog tree) "Log\n"
+		where collectLog v = do
+				cur <- getState
+				putState (cur ++ "Found node: " ++ [v] ++ "\n")
+				return v
+\end{lstlisting}

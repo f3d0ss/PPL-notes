@@ -4,7 +4,7 @@ of type Float:
 data PriceList a = PriceList [(a, Float)]
 \begin{itemize}
 	\item Make PriceList an instance of Functor and Foldable.
-	\item Make PriceList an instance of Applicative, with the constraint that each application of a function in the left hand side of a <*> must increment a right hand side value’s price by the price associated with the function.
+	\item Make PriceList an instance of Applicative, with the constraint that each application of a function in the left hand side of a \texttt{<*>} must increment a right hand side value’s price by the price associated with the function.
 \end{itemize}
 Solution:
 \begin{lstlisting}
