@@ -1,3 +1,56 @@
+\subsection{2020-07-17}
+Define the verbose construct for folding illustrated by the following example.
+This is a fold-right ($->$) with initial value 1 on the list (1 2 3 4 5 6),
+and the fold function is given in the ``exec'' part.
+Of course, $<-$ is used to select fold-left instead of right.\\
+Solution:
+\begin{lstlisting}
+(define-syntax cobol-fold
+(syntax-rules (direction -> <- data using from exec)
+((_ direction -> from i data d ... (exec e ... ) using x y)
+(foldr (lambda (x y) e ...) i '(d ...)))
+((_ direction <- from i data d ... (exec e ... ) using x y)
+(foldl (lambda (x y) e ...) i '(d ...)))))
+
+(cobol-fold direction -> from 1 data 1 2 3 4 5 6
+(exec
+(displayln y)
+(+ x y))
+using x y)
+\end{lstlisting}
+
+
+
+
+
+\subsection{2020-06-29}
+Define the construct define-with-types, that is used to define a procedure with type constraints, both for the parameters and for the return value.
+The type constraints are the corresponding type predicates, e.g. number? to check if a value is a number.
+If the type constraints are violated, an error should be issued.\\
+Solution:
+\begin{lstlisting}
+	(define-syntax define-with-types
+		(syntax-rules (:)
+			((_ (f : tf (x1 : t1) ...) e1 ...)
+				(define (f x1 ...)
+					(if (and (t1 x1) ...)
+						(let ((res (begin
+								e1 ...)))
+							(if (tf res)
+								res
+								(error "bad return type")))
+						(error "bad input types"))))))
+	
+	(define-with-types (add-to-char : integer? (x : integer?) (y : char?))
+		(+ x (char->integer y)))
+	
+	(add-to-char 3 #\A)
+\end{lstlisting}
+
+
+
+
+
 \subsection{2020-02-07}
 Implement this new construct: (each-until var in list until pred : body), where keywords are written in
 boldface. It works like a for-each with variable var, but it can end before finishing all the elements of list

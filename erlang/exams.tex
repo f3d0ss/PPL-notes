@@ -1,3 +1,65 @@
+\subsection{2020-07-17}
+Define a ``broadcaster'' process which answers to the following commands:
+\begin{itemize}
+	\item {spawn, L, V} creates a process for each element of L, passing its initial parameter in V, where L is a list of names of functions defined in the current module and V is their respective parameters (of course it must be $|L| = |V|$).
+	\item {send, V}, with V a list of values, sends to each respective process created with the previous spawn command a message in V; e.g. {spawn, [1,2,3]} will send 1 to the first process, 2 to the second, and 3 to the third.
+	\item stop is used to end the broadcaster, and to also stop every process spawned by it.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+	broadcaster(Pids) ->
+		receive
+			{spawn, Fs, Vs} ->
+				FDs = lists:zip(Fs, Vs),
+				io:format("~p~n", [FDs]),
+				broadcaster([spawn_link(?MODULE, F, V) || {F,V} <- FDs]);
+			{send, Vs} ->
+				FDs = lists:zip(Pids, Vs),
+				io:format("~p~n", [FDs]),
+				[ Pid ! V || {Pid, V} <- FDs];
+			stop ->
+				ok
+		end.
+\end{lstlisting}
+
+
+
+
+
+\subsection{2020-06-29}
+Define a ``functional'' process buffer, called fuffer, that stores only one value and may receive messages only from its creator.
+fuffer can receive the following commands:
+\begin{itemize}
+	\item `set' to store a new value.
+	\item `get' to obtain the current value.
+	\item `apply F' to apply the function F to the stored value.
+	\item `die' to end.
+	\item `duplicate' to create (and return) an exact copy of itself.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+	fuffer(Value) ->
+		receive
+			{set, V} ->
+				fuffer(V);
+			{get, Sender} ->
+				Sender ! {self(), Value},
+				fuffer(Value);
+			{apply, F} ->
+				fuffer(F(Value));
+			die ->
+				ok;
+			{duplicate, Sender} ->
+				Pid = spawn(?MODULE, fuffer, [Value]),
+				Sender ! {self(), Pid},
+				fuffer(Value)
+		end.
+\end{lstlisting}
+
+
+
+
+
 \subsection{2020-02-07}
 We want to create a simplified implementation of the “Reduce” part of the MapReduce paradigm. To this
 end, define a process “reduce\_manager” that keeps track of a pool of reducers. When it is created, it

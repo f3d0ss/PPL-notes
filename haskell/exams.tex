@@ -1,3 +1,111 @@
+\subsection{2020-07-17}
+Define a data type that stores an m by n matrix as a list of lists by row.
+In your implementation you can use the following functions: splitAt, unzip, (!!).
+After defining an appropriate data constructor, do the following:
+\begin{itemize}
+	\item Define a function `new' that takes as input two integers m and n and a value `fill', and returns an m by n matrix whose elements are all equal to `fill'.
+	\item Define function `replace' such that, given a matrix m, the indices i, j of one of its elements, and a new element, it returns a new matrix equal to m except for the element in position i, j, which is replaced with the new one.
+	\item Define function `lookup', which returns the element in a given position of a matrix.
+	\item Make the data type an instance of Functor and Foldable.
+	\item Make the data type an instance of Applicative.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+newtype Matrix a = Matrix [[a]] deriving (Eq, Show)
+
+new :: Int -> Int -> a -> Matrix a
+new m n fill = Matrix [[fill | _ <- [1..n]] | _ <- [1..m]]
+
+replace :: Int -> Int -> a -> Matrix a -> Matrix a
+replace i j x (Matrix rows) = let (rowsHead, r:rowsTail) = splitAt i rows
+(rHead, x':rTail) = splitAt j r
+in Matrix $ rowsHead ++ ((rHead ++ (x:rTail)):rowsTail)
+
+lookup :: Int -> Int -> Matrix a -> a
+lookup i j (Matrix rows) = (rows !! i) !! j
+
+instance Functor Matrix where
+fmap f (Matrix rows) = Matrix $ map (\r -> map f r) rows
+
+instance Foldable Matrix where
+foldr f e (Matrix rows) = foldr (\r acc -> foldr f acc r) e rows
+
+hConcat :: Matrix a -> Matrix a -> Matrix a
+hConcat (Matrix []) m2 = m2
+hConcat m1 (Matrix []) = m1
+hConcat (Matrix (r1:r1s)) (Matrix (r2:r2s)) =
+let (Matrix tail) = hConcat (Matrix r1s) (Matrix r2s)
+in Matrix $ (r1 ++ r2) : tail
+
+vConcat :: Matrix a -> Matrix a -> Matrix a
+vConcat (Matrix rows1) (Matrix rows2) = Matrix $ rows1 ++ rows2
+
+concatMapM :: (a -> Matrix b) -> Matrix a -> Matrix b
+concatMapM f (Matrix rows) =
+let empty = Matrix []
+in foldl
+(\acc r -> vConcat acc $ foldl (\acc x -> hConcat acc (f x)) empty r)
+empty
+rows
+
+instance Applicative Matrix where
+pure x = Matrix [[x]]
+fs <*> xs = concatMapM (\f -> fmap f xs) fs
+\end{lstlisting}
+
+
+
+
+
+\subsection{2020-06-29}
+We want to implement a queue, i.e. a FIFO container with the two operations enqueue and dequeue with the obvious meaning.
+A functional way of doing this is based on the idea of using two lists, say L1 and L2, where the first one is used for dequeuing (popping) and the second one is for enqueing (pushing).
+When dequeing, if the first list is empty, we take the second one and put it in the
+first, reversing it.
+This last operation appears to be O(n), but suppose we have n enqueues followed by n dequeues; the first dequeue takes time proportional to n (reverse), but all the other dequeues take constant time.
+This makes the operation O(1) amortised that is why it is acceptable in many applications.
+\begin{itemize}
+	\item Define Queue and make it an instance of Eq.
+	\item Define enqueue and dequeue, stating their types.
+	\item Make Queue an instance of Functor and Foldable.
+	\item Make Queue an instance of Applicative.
+\end{itemize}
+Solution:
+\begin{lstlisting}
+	data Queue a = Queue [a] [a] deriving Show
+	
+	to_list (Queue x y) = x ++ reverse y
+	
+	instance Eq a => Eq (Queue a) where
+		q1 == q2 = (to_list q1) == (to_list q2)
+	
+	enqueue :: a -> Queue a -> Queue a
+	enqueue x (Queue pop push) = Queue pop (x:push)
+	
+	dequeue :: Queue a -> (Maybe a, Queue a)
+	dequeue q@(Queue [] []) = (Nothing, q)
+	dequeue (Queue (x:xs) v) = (Just x, Queue xs v)
+	dequeue (Queue [] v) = dequeue (Queue (reverse v) [])
+	
+	instance Functor Queue where
+		fmap f (Queue x y) = Queue (fmap f x) (fmap f y)
+	
+	instance Foldable Queue where
+		foldr f z q = foldr f z $ to_list q 
+	
+	q1 +++ (Queue x y) = Queue ((to_list q1) ++ x) y
+	
+	qconcat q = foldr (+++) (Queue [][]) q
+	
+	instance Applicative Queue where
+		pure x = Queue [x] []
+		fs <*> xs = qconcat $ fmap (\f -> fmap f xs) fs
+\end{lstlisting}
+
+
+
+
+
 \subsection{2020-02-07}
 Consider a data type PriceList that represents a list of items, where each item is associated with a price,
 of type Float:
