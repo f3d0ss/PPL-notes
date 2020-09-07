@@ -333,7 +333,7 @@ Then, concat and concatMap (here \texttt{tconcmap} for short) are like those of 
 	tconcmap f t = tconcat $ tmap f t
 	
 	instance Applicative Tree where
-		pure = Leaf
+		pure x = Leaf x
 		fs <*> xs = tconcmap (\f -> tmap f xs) fs
 \end{lstlisting}
 

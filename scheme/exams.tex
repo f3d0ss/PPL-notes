@@ -5,18 +5,18 @@ and the fold function is given in the ``exec'' part.
 Of course, $<-$ is used to select fold-left instead of right.\\
 Solution:
 \begin{lstlisting}
-(define-syntax cobol-fold
-(syntax-rules (direction -> <- data using from exec)
-((_ direction -> from i data d ... (exec e ... ) using x y)
-(foldr (lambda (x y) e ...) i '(d ...)))
-((_ direction <- from i data d ... (exec e ... ) using x y)
-(foldl (lambda (x y) e ...) i '(d ...)))))
-
-(cobol-fold direction -> from 1 data 1 2 3 4 5 6
-(exec
-(displayln y)
-(+ x y))
-using x y)
+	(define-syntax cobol-fold
+		(syntax-rules (direction -> <- data using from exec)
+			((_ direction -> from i data d ... (exec e ... ) using x y)
+				(foldr (lambda (x y) e ...) i '(d ...)))
+			((_ direction <- from i data d ... (exec e ... ) using x y)
+				(foldl (lambda (x y) e ...) i '(d ...)))))
+	
+	(cobol-fold direction -> from 1 data 1 2 3 4 5 6
+			(exec
+				(displayln y)
+				(+ x y))
+				using x y)
 \end{lstlisting}
 
 
